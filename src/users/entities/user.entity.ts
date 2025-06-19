@@ -8,15 +8,15 @@ export class UserEntity {
   @Column({ unique: true })
   username: string;
 
-  // En una aplicación real, NUNCA guardes la contraseña en texto plano.
-  // Usa una librería como bcrypt para hashear la contraseña antes de guardarla.
   @Column()
   password: string;
 
-  @Column()
-  role: string; // Ej: 'admin', 'operator'
+  @Column({ unique: true }) // Generalmente el correo también es único
+  email: string; // Nueva columna para el correo
 
-    // Columnas para sincronización
+  @Column()
+  role: string;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 

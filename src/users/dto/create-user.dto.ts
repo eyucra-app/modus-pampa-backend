@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsEmail } from 'class-validator';
 
 export class CreateUserDto {
   @IsUUID()
@@ -12,6 +12,10 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+
+  @IsEmail() // Validación para formato de email
+  @IsNotEmpty()
+  email: string; // Nuevo campo para el correo
 
   @IsString()
   @IsNotEmpty()
