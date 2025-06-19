@@ -22,11 +22,11 @@ export class SyncService {
       ? { where: { updatedAt: MoreThan(new Date(lastSyncTimestamp)) } }
       : {};
 
-    // Para contribuciones y asistencias, necesitamos cargar las relaciones anidadas.
-    const contributionQueryOptions = { ...queryOptions, relations: ['details', 'details.affiliate'] };
-    const attendanceQueryOptions = { ...queryOptions, relations: ['records', 'records.affiliate'] };
+    // <<<--- CORRECCIÓN AQUÍ: Se cambió 'details' por 'links' para contribuciones.
+    // 'records' para asistencia ya era correcto.
+    const contributionQueryOptions = { ...queryOptions, relations: ['links'] };
+    const attendanceQueryOptions = { ...queryOptions, relations: ['records'] };
 
-    // Ejecutamos todas las consultas en paralelo para mayor eficiencia
     const [affiliates, users, fines, contributions, attendance] = await Promise.all([
       this.affiliatesRepo.find(queryOptions),
       this.usersRepo.find(queryOptions),
