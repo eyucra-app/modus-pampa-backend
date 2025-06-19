@@ -24,6 +24,11 @@ export class UsersService {
       throw new ConflictException(`El nombre de usuario '${userData.username}' ya está en uso.`);
     }
 
+    const existingByEmail = await this.usersRepository.findOne({ where: { email: userData.email } });
+    if (existingByEmail && existingByEmail.uuid !== userData.uuid) {
+        throw new ConflictException(`El correo electrónico '${userData.email}' ya está en uso.`);
+    }
+
     const user = this.usersRepository.create(userData);
     return this.usersRepository.save(user);
   }
