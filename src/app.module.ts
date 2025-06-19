@@ -5,11 +5,12 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AffiliatesModule } from './affiliates/affiliates.module';
-import { UsersModule } from './users/users.module';
+import { AttendanceModule } from './attendance/attendance.module';
 import { ContributionsModule } from './contributions/contributions.module';
 import { FinesModule } from './fines/fines.module';
-import { AttendanceModule } from './attendance/attendance.module';
 import { SyncModule } from './sync/sync.module';
+import { UsersModule } from './users/users.module';
+
 
 @Module({
   imports: [
@@ -52,14 +53,14 @@ import { SyncModule } from './sync/sync.module';
         
         return dbConfig;
       },
-    }),,
-    // Añade aquí tus módulos
+    }),
+    //Añade aquí tus módulos
     AffiliatesModule,
-    //UsersModule,
-    //ContributionsModule,
-    //FinesModule,
-    //AttendanceModule,
-    //SyncModule,
+    UsersModule,
+    ContributionsModule,
+    FinesModule,
+    AttendanceModule,
+    SyncModule,
 
   ],
   controllers: [AppController],
