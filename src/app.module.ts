@@ -55,11 +55,11 @@ import { SyncModule } from './sync/sync.module';
     }),,
     // Añade aquí tus módulos
     AffiliatesModule,
-    UsersModule,
-    ContributionsModule,
-    FinesModule,
-    AttendanceModule,
-    SyncModule,
+    //UsersModule,
+    //ContributionsModule,
+    //FinesModule,
+    //AttendanceModule,
+    //SyncModule,
 
   ],
   controllers: [AppController],
