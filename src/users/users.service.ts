@@ -19,9 +19,9 @@ export class UsersService {
     // userData.password = await bcrypt.hash(userData.password, salt);
     
     // Prevenimos conflictos si el username ya existe pero el uuid es diferente
-    const existing = await this.usersRepository.findOne({ where: { username: userData.username } });
+    const existing = await this.usersRepository.findOne({ where: { user_name: userData.user_name } });
     if (existing && existing.uuid !== userData.uuid) {
-      throw new ConflictException(`El nombre de usuario '${userData.username}' ya está en uso.`);
+      throw new ConflictException(`El nombre de usuario '${userData.user_name}' ya está en uso.`);
     }
 
     const existingByEmail = await this.usersRepository.findOne({ where: { email: userData.email } });
@@ -45,8 +45,8 @@ export class UsersService {
   }
 
   // Podrías añadir un método para el login aquí
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersRepository.findOneBy({ username });
+  async validateUser(user_name: string, pass: string): Promise<any> {
+    const user = await this.usersRepository.findOneBy({ user_name });
     // const passwordMatches = await bcrypt.compare(pass, user.password);
     if (user && user.password === pass) { // Reemplazar con la comparación de hash
       const { password, ...result } = user;
