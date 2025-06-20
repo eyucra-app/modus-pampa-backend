@@ -11,7 +11,7 @@ export class AttendanceListEntity {
 
   // El nombre de la columna coincide con la clave 'created_at' en tu toMap()
   @Column({ name: 'created_at', type: 'timestamp with time zone' })
-  createdAt: Date;
+  created_at: Date;
 
   @Column()
   status: string; // 'PREPARADA', 'INICIADA', etc.
@@ -22,5 +22,5 @@ export class AttendanceListEntity {
 
   // La fecha de actualización nos sirve para la sincronización
   @UpdateDateColumn({ type: 'timestamp with time zone' })
-  updatedAt: Date;
+  updated_at: Date;
 }

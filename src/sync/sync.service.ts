@@ -19,7 +19,7 @@ export class SyncService {
 
   async pullChanges(lastSyncTimestamp?: string) {
     const queryOptions = lastSyncTimestamp
-      ? { where: { updatedAt: MoreThan(new Date(lastSyncTimestamp)) } }
+      ? { where: { updated_at: MoreThan(new Date(lastSyncTimestamp)) } }
       : {};
 
     // <<<--- CORRECCIÓN AQUÍ: Se cambió 'details' por 'links' para contribuciones.

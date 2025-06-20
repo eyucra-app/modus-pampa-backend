@@ -9,7 +9,7 @@ export class CreateAttendanceDto {
 
   @IsDateString()
   @IsNotEmpty()
-  createdAt: string;
+  created_at: string;
 
   @IsString()
   @IsNotEmpty()

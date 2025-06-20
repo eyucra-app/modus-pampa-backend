@@ -6,7 +6,7 @@ export class UserEntity {
   uuid: string;
 
   @Column({ unique: true })
-  username: string;
+  user_name: string;
 
   @Column()
   password: string;
@@ -18,8 +18,8 @@ export class UserEntity {
   role: string;
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
-  updatedAt: Date;
+  updated_at: Date;
 }

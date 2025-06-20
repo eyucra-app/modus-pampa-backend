@@ -44,8 +44,8 @@ export class AffiliateEntity {
 
   // Columnas para sincronización
   @CreateDateColumn({ type: 'timestamp with time zone' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
-  updatedAt: Date;
+  updated_at: Date;
 }
