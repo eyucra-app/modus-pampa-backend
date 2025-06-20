@@ -20,7 +20,7 @@ export class AttendanceService {
 
       const listData = {
           ...mainData,
-          created_at: new Date(mainData.createdAt),
+          created_at: new Date(mainData.created_at),
       };
 
       if (id) {
