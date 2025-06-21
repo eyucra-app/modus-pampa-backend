@@ -1,8 +1,13 @@
-import { IsString, IsNotEmpty, IsDateString, IsArray, ValidateNested, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsArray, ValidateNested, IsOptional, IsNumber, IsBoolean, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ContributionAffiliateLinkDto } from './contribution-affiliate-link.dto';
 
 export class CreateContributionDto {
+  
+  @IsUUID()
+  @IsNotEmpty()
+  uuid: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;
