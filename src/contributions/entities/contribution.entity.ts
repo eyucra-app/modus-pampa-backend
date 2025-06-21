@@ -17,10 +17,10 @@ export class ContributionEntity {
 
   // El nombre de la columna coincide con la clave 'total_amount' en tu toMap()
   @Column({ name: 'total_amount', type: 'float' })
-  defaultAmount: number;
+  default_amount: number;
 
   @Column({ name: 'is_general', default: true })
-  isGeneral: boolean;
+  is_general: boolean;
 
   // Relación: Una contribución tiene muchos enlaces a afiliados
   @OneToMany(() => ContributionAffiliateLinkEntity, link => link.contribution, { cascade: true })
