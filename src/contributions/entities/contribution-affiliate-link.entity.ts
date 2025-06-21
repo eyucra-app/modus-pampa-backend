@@ -9,16 +9,16 @@ export class ContributionAffiliateLinkEntity {
   contributionId: number;
 
   @PrimaryColumn({ type: 'uuid' })
-  affiliateUuid: string;
+  affiliate_uuid: string;
 
   @Column({ name: 'amount_to_pay', type: 'float' })
-  amountToPay: number;
+  amount_to_pay: number;
 
   @Column({ name: 'amount_paid', type: 'float', default: 0.0 })
-  amountPaid: number;
+  amount_paid: number;
 
   @Column({ name: 'is_paid', default: false })
-  isPaid: boolean;
+  is_paid: boolean;
 
   // Relaciones
   @ManyToOne(() => ContributionEntity, contribution => contribution.links, { onDelete: 'CASCADE' })
@@ -26,6 +26,6 @@ export class ContributionAffiliateLinkEntity {
   contribution: ContributionEntity;
 
   @ManyToOne(() => AffiliateEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'affiliateUuid' })
+  @JoinColumn({ name: 'affiliate_uuid' })
   affiliate: AffiliateEntity;
 }

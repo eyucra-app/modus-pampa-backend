@@ -2,16 +2,16 @@ import { IsUUID, IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 export class ContributionAffiliateLinkDto {
   @IsUUID()
-  affiliateUuid: string;
+  affiliate_uuid: string;
 
   @IsNumber()
-  amountToPay: number;
+  amount_to_pay: number;
 
   @IsNumber()
   @IsOptional()
-  amountPaid?: number = 0.0;
+  amount_paid?: number = 0.0;
 
   @IsBoolean()
   @IsOptional()
-  isPaid?: boolean = false;
+  is_paid?: boolean = false;
 }
