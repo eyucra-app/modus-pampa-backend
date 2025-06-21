@@ -22,7 +22,7 @@ export class AffiliatesController {
   @Patch(':uuid') // El uuid en el path es opcional, la lógica se basa en el body
   @Put(':uuid')
   update(@Body() createAffiliateDto: CreateAffiliateDto) {
-    // Reutilizamos el DTO y el método de servicio.
+    // Reutilizamos el DTO y el método de servicio
     return this.affiliatesService.upsert(createAffiliateDto);
   }
 
