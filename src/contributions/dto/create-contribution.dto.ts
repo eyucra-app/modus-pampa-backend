@@ -15,11 +15,11 @@ export class CreateContributionDto {
   date: string;
 
   @IsNumber()
-  defaultAmount: number;
+  default_amount: number;
 
   @IsBoolean()
   @IsOptional()
-  isGeneral?: boolean = true;
+  is_general?: boolean = true;
 
   // El DTO para la creación/actualización contendrá la lista de enlaces
   @IsArray()
