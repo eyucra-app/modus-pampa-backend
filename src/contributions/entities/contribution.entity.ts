@@ -6,6 +6,9 @@ export class ContributionEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ unique: true })
+  uuid: string;
+
   @Column()
   name: string;
 
