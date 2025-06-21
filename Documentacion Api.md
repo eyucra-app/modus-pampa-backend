@@ -1,404 +1,856 @@
-# Backend API Documentation
+# Documentación de la API Backend
 
-This document provides a detailed overview of the backend API for your Flutter application. The backend is built with NestJS and TypeORM, using PostgreSQL as the database. It manages various aspects including affiliates, attendance records, contributions, fines, and user authentication, with a synchronization mechanism for data consistency.
+Este documento detalla la funcionalidad de la API RESTful para la aplicación de gestión de afiliados, asistencia, contribuciones, multas, sincronización y usuarios. Está construida con NestJS y TypeORM, utilizando PostgreSQL como base de datos.
 
-## 1. Core Modules
+---
 
-The application is structured into several modules, each responsible for a specific domain.
+## 1. Módulos y Entidades Principales
 
-### 1.1. Affiliates Module
+La aplicación se compone de varios módulos, cada uno gestionando una parte específica del negocio y sus correspondientes entidades de base de datos.
 
-Manages information about affiliates.
+### 1.1. Módulo de Afiliados (`AffiliatesModule`)
 
-* **Entities**:
-    * `AffiliateEntity`: Represents an affiliate in the database.
-        * `uuid`: string (Primary Column, Unique)
-        * `id`: string (Unique, e.g., 'AP-001')
-        * `first_name`: string
-        * `last_name`: string
-        * `ci`: string (Unique)
-        * `phone`: string (Nullable)
-        * `original_affiliate_name`: string (Default: '-')
-        * `current_affiliate_name`: string (Default: '-')
-        * `profile_photo_url`: string (Nullable)
-        * `credential_photo_url`: string (Nullable)
-        * `tags`: string[] (Default: [])
-        * `total_paid`: number (float, Default: 0.0)
-        * `total_debt`: number (float, Default: 0.0)
-        * `createdAt`: Date (Auto-generated timestamp)
-        * `updatedAt`: Date (Auto-generated timestamp)
+Gestiona la información de los afiliados.
 
-* **DTOs**:
-    * `CreateAffiliateDto`: Used for creating or updating an affiliate.
-        * `uuid`: string (IsUUID, IsNotEmpty)
-        * `id`: string (IsString, IsNotEmpty)
-        * `first_name`: string (IsString, IsNotEmpty)
-        * `last_name`: string (IsString, IsNotEmpty)
-        * `ci`: string (IsString, IsNotEmpty)
-        * `phone`: string (IsOptional)
-        * `original_affiliate_name`: string (IsOptional, Default: '-')
-        * `current_affiliate_name`: string (IsOptional, Default: '-')
-        * `profile_photo_url`: string (IsUrl, IsOptional)
-        * `credential_photo_url`: string (IsUrl, IsOptional)
-        * `tags`: string[] (IsArray, IsOptional, Default: [])
-        * `total_paid`: number (IsNumber, IsOptional, Default: 0.0)
-        * `total_debt`: number (IsNumber, IsOptional, Default: 0.0)
-    * `UpdateAffiliateDto`: Extends `PartialType(CreateAffiliateDto)`, allowing partial updates.
+#### 1.1.1. Entidad: `AffiliateEntity` (`src/affiliates/entities/affiliate.entity.ts`)
 
-* **Services**:
-    * `AffiliatesService`: Handles the business logic for affiliates.
-        * `upsert(affiliateData: CreateAffiliateDto)`: Creates a new affiliate or updates an existing one based on the UUID.
-        * `remove(uuid: string)`: Deletes an affiliate by UUID. Throws `NotFoundException` if the affiliate is not found.
-        * `findAll()`: Returns all affiliates.
-        * `findOne(uuid: string)`: Returns a single affiliate by UUID. Throws `NotFoundException` if the affiliate is not found.
+Representa a un afiliado en la base de datos.
 
-* **Controllers**:
-    * `AffiliatesController`: Exposes RESTful endpoints for affiliate management under the `/api/affiliates` base path.
-        * `POST /api/affiliates`
-            * **Description**: Creates a new affiliate or updates an existing one (upsert operation).
-            * **Request Body**: `CreateAffiliateDto`
-            * **Response**: `AffiliateEntity` (the saved affiliate)
-            * **Status Code**: `200 OK`
-        * `PATCH /api/affiliates/:uuid`
-            * **Description**: Updates an existing affiliate. Internally calls the `upsert` service method.
-            * **Request Body**: `CreateAffiliateDto` (can be partial due to `PartialType` in `UpdateAffiliateDto` but the controller uses `CreateAffiliateDto` and relies on the service's upsert logic)
-            * **Response**: `AffiliateEntity` (the updated affiliate)
-            * **Status Code**: `200 OK`
-        * `GET /api/affiliates`
-            * **Description**: Retrieves all affiliates.
-            * **Response**: `AffiliateEntity[]`
-            * **Status Code**: `200 OK`
-        * `GET /api/affiliates/:uuid`
-            * **Description**: Retrieves a single affiliate by UUID.
-            * **Path Params**: `uuid` (string)
-            * **Response**: `AffiliateEntity`
-            * **Status Code**: `200 OK`
-        * `DELETE /api/affiliates/:uuid`
-            * **Description**: Deletes an affiliate by UUID.
-            * **Path Params**: `uuid` (string)
-            * **Response**: No content.
-            * **Status Code**: `204 No Content`
+| Campo                    | Tipo      | Descripción                                   | Restricciones            |
+| :----------------------- | :-------- | :-------------------------------------------- | :----------------------- |
+| `uuid`                   | `string`  | Identificador único universal (Primary Key)   | `@PrimaryColumn`, `UUID` |
+| `id`                     | `string`  | ID legible, ej. 'AP-001'                      | `@Column`, `unique`      |
+| `first_name`             | `string`  | Nombre del afiliado                           | `@Column`                |
+| `last_name`              | `string`  | Apellido del afiliado                         | `@Column`                |
+| `ci`                     | `string`  | Cédula de identidad                           | `@Column`, `unique`      |
+| `phone`                  | `string`  | Número de teléfono (opcional)                 | `@Column`, `nullable`    |
+| `original_affiliate_name`| `string`  | Nombre original del afiliado (por defecto '-')| `@Column`                |
+| `current_affiliate_name` | `string`  | Nombre actual del afiliado (por defecto '-')  | `@Column`                |
+| `profile_photo_url`      | `string`  | URL de la foto de perfil (opcional)           | `@Column`, `nullable`    |
+| `credential_photo_url`   | `string`  | URL de la foto de credencial (opcional)       | `@Column`, `nullable`    |
+| `tags`                   | `string[]`| Etiquetas asociadas al afiliado               | `simple-array`, `default: []` |
+| `total_paid`             | `number`  | Cantidad total pagada (por defecto 0.0)       | `float`, `default: 0.0`  |
+| `total_debt`             | `number`  | Cantidad total adeudada (por defecto 0.0)     | `float`, `default: 0.0`  |
+| `created_at`             | `Date`    | Fecha de creación                             | `@CreateDateColumn`      |
+| `updated_at`             | `Date`    | Última fecha de actualización                 | `@UpdateDateColumn`      |
 
-### 1.2. Attendance Module
+#### 1.1.2. DTOs
 
-Manages attendance lists and individual attendance records for affiliates.
+* **`CreateAffiliateDto`** (`src/affiliates/dto/create-affiliate.dto.ts`): Utilizado para la creación y actualización de afiliados. Incluye todos los campos de `AffiliateEntity` con validaciones.
+* **`UpdateAffiliateDto`** (`src/affiliates/dto/update-affiliate.dto.ts`): Extiende `PartialType` de `CreateAffiliateDto`, haciendo todos sus campos opcionales para actualizaciones parciales.
 
-* **Entities**:
-    * `AttendanceListEntity`: Represents an attendance list.
-        * `id`: number (Primary Generated Column)
-        * `name`: string
-        * `createdAt`: Date (timestamp with time zone)
-        * `status`: string (e.g., 'PREPARADA', 'INICIADA')
-        * `records`: `AttendanceRecordEntity[]` (One-to-Many relation, cascaded)
-        * `updatedAt`: Date (Auto-generated timestamp)
-    * `AttendanceRecordEntity`: Represents an individual attendance record for an affiliate within a list.
-        * `id`: number (Primary Generated Column)
-        * `listId`: number (Foreign Key to `AttendanceListEntity`)
-        * `affiliateUuid`: string (Foreign Key to `AffiliateEntity`)
-        * `registeredAt`: Date (timestamp with time zone)
-        * `status`: string (e.g., 'PRESENTE', 'RETRASO')
-        * `attendanceList`: `AttendanceListEntity` (Many-to-One relation)
-        * `affiliate`: `AffiliateEntity` (Many-to-One relation)
+#### 1.1.3. Servicios (`AffiliatesService`)
 
-* **DTOs**:
-    * `AttendanceRecordDto`: Used for individual attendance records within a list.
-        * `affiliateUuid`: string (IsUUID, IsNotEmpty)
-        * `status`: string (IsString, IsNotEmpty)
-        * `registeredAt`: string (IsDateString, IsNotEmpty)
-    * `CreateAttendanceDto`: Used for creating or updating an attendance list.
-        * `name`: string (IsString, IsNotEmpty)
-        * `createdAt`: string (IsDateString, IsNotEmpty)
-        * `status`: string (IsString, IsNotEmpty)
-        * `records`: `AttendanceRecordDto[]` (IsArray, ValidateNested, Type(() => AttendanceRecordDto))
-    * `UpdateAttendanceDto`: Extends `PartialType(CreateAttendanceDto)`.
+* `upsert(affiliateData: CreateAffiliateDto): Promise<AffiliateEntity>`: Crea un nuevo afiliado o actualiza uno existente si el `uuid` ya existe.
+* `remove(uuid: string): Promise<void>`: Elimina un afiliado por su `uuid`. Lanza `NotFoundException` si no se encuentra.
+* `findAll(): Promise<AffiliateEntity[]>`: Encuentra y retorna todos los afiliados.
+* `findOne(uuid: string): Promise<AffiliateEntity>`: Encuentra y retorna un afiliado por su `uuid`. Lanza `NotFoundException` si no se encuentra.
 
-* **Services**:
-    * `AttendanceService`: Handles the business logic for attendance.
-        * `upsert(createDto: CreateAttendanceDto, id?: number)`: Creates a new attendance list or updates an existing one. Manages associated attendance records within a transaction.
-        * `findAll()`: Returns all attendance lists with their records.
-        * `findOne(id: number)`: Returns a single attendance list by ID with its records and associated affiliate details. Throws `NotFoundException` if not found.
-        * `remove(id: number)`: Deletes an attendance list by ID. Throws `NotFoundException` if not found.
+#### 1.1.4. Endpoints (`AffiliatesController`)
 
-* **Controllers**:
-    * `AttendanceController`: Exposes RESTful endpoints for attendance management under the `/api/attendance` base path.
-        * `POST /api/attendance`
-            * **Description**: Creates a new attendance list with its records.
-            * **Request Body**: `CreateAttendanceDto`
-            * **Response**: `AttendanceListEntity` (the saved attendance list with records)
-            * **Status Code**: `201 Created` (implicit, NestJS default for POST)
-        * `PATCH /api/attendance/:id`
-            * **Description**: Updates an existing attendance list and its records.
-            * **Path Params**: `id` (number)
-            * **Request Body**: `CreateAttendanceDto`
-            * **Response**: `AttendanceListEntity` (the updated attendance list with records)
-            * **Status Code**: `200 OK`
-        * `GET /api/attendance`
-            * **Description**: Retrieves all attendance lists with their records.
-            * **Response**: `AttendanceListEntity[]`
-            * **Status Code**: `200 OK`
-        * `GET /api/attendance/:id`
-            * **Description**: Retrieves a single attendance list by ID with its records and linked affiliate information.
-            * **Path Params**: `id` (number)
-            * **Response**: `AttendanceListEntity`
-            * **Status Code**: `200 OK`
-        * `DELETE /api/attendance/:id`
-            * **Description**: Deletes an attendance list by ID.
-            * **Path Params**: `id` (number)
-            * **Response**: No content.
-            * **Status Code**: `204 No Content`
+**Base URL**: `/api/affiliates`
 
-### 1.3. Contributions Module
+* **`POST /api/affiliates`**
+    * **Descripción**: Crea o actualiza un afiliado. La lógica de "upsert" (insertar o actualizar) se maneja en el servicio.
+    * **Request Body**: `CreateAffiliateDto`
+    * **Response**: `AffiliateEntity` (HTTP 200 OK)
+    * **Ejemplo de Request Body**:
+        ```json
+        {
+          "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+          "id": "AP-001",
+          "first_name": "Juan",
+          "last_name": "Perez",
+          "ci": "1234567",
+          "phone": "555-1234",
+          "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+          "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+          "tags": ["activo", "directiva"],
+          "total_paid": 100.50,
+          "total_debt": 20.00
+        }
+        ```
+    * **Ejemplo de Response**:
+        ```json
+        {
+          "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+          "id": "AP-001",
+          "first_name": "Juan",
+          "last_name": "Perez",
+          "ci": "1234567",
+          "phone": "555-1234",
+          "original_affiliate_name": "-",
+          "current_affiliate_name": "-",
+          "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+          "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+          "tags": ["activo", "directiva"],
+          "total_paid": 100.50,
+          "total_debt": 20.00,
+          "created_at": "2023-10-27T10:00:00.000Z",
+          "updated_at": "2023-10-27T10:00:00.000Z"
+        }
+        ```
 
-Manages contributions and their associated affiliate payment links.
+* **`PATCH /api/affiliates/:uuid`**
+    * **Descripción**: Actualiza un afiliado existente. Reutiliza la lógica de "upsert".
+    * **Parámetros de Ruta**: `uuid: string` (UUID del afiliado a actualizar, aunque la lógica del servicio usa el `uuid` del cuerpo).
+    * **Request Body**: `CreateAffiliateDto`
+    * **Response**: `AffiliateEntity` (HTTP 200 OK)
 
-* **Entities**:
-    * `ContributionEntity`: Represents a contribution event.
-        * `id`: number (Primary Generated Column)
-        * `name`: string
-        * `description`: string (Nullable)
-        * `date`: Date (timestamp with time zone)
-        * `defaultAmount`: number (float, column name `total_amount`)
-        * `isGeneral`: boolean (Default: `true`, column name `is_general`)
-        * `links`: `ContributionAffiliateLinkEntity[]` (One-to-Many relation, cascaded)
-        * `createdAt`: Date (Auto-generated timestamp)
-        * `updatedAt`: Date (Auto-generated timestamp)
-    * `ContributionAffiliateLinkEntity`: Represents a link between a contribution and an affiliate, including payment details.
-        * `contributionId`: number (Primary Column, Foreign Key to `ContributionEntity`)
-        * `affiliateUuid`: string (Primary Column, Foreign Key to `AffiliateEntity`)
-        * `amountToPay`: number (float)
-        * `amountPaid`: number (float, Default: 0.0)
-        * `isPaid`: boolean (Default: `false`)
-        * `contribution`: `ContributionEntity` (Many-to-One relation)
-        * `affiliate`: `AffiliateEntity` (Many-to-One relation)
+* **`GET /api/affiliates`**
+    * **Descripción**: Obtiene una lista de todos los afiliados.
+    * **Response**: `AffiliateEntity[]` (HTTP 200 OK)
+    * **Ejemplo de Response**:
+        ```json
+        [
+          {
+            "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+            "id": "AP-001",
+            "first_name": "Juan",
+            "last_name": "Perez",
+            "ci": "1234567",
+            "phone": "555-1234",
+            "original_affiliate_name": "-",
+            "current_affiliate_name": "-",
+            "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+            "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+            "tags": ["activo", "directiva"],
+            "total_paid": 100.50,
+            "total_debt": 20.00,
+            "created_at": "2023-10-27T10:00:00.000Z",
+            "updated_at": "2023-10-27T10:00:00.000Z"
+          },
+          {
+            "uuid": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+            "id": "AP-002",
+            "first_name": "Maria",
+            "last_name": "Gomez",
+            "ci": "7654321",
+            "phone": "555-5678",
+            "original_affiliate_name": "-",
+            "current_affiliate_name": "-",
+            "profile_photo_url": null,
+            "credential_photo_url": null,
+            "tags": [],
+            "total_paid": 50.00,
+            "total_debt": 0.00,
+            "created_at": "2023-10-26T09:00:00.000Z",
+            "updated_at": "2023-10-26T09:00:00.000Z"
+          }
+        ]
+        ```
 
-* **DTOs**:
-    * `ContributionAffiliateLinkDto`: Used for linking contributions to affiliates.
-        * `affiliateUuid`: string (IsUUID)
-        * `amountToPay`: number (IsNumber)
-        * `amountPaid?`: number (IsNumber, IsOptional, Default: 0.0)
-        * `isPaid?`: boolean (IsBoolean, IsOptional, Default: false)
-    * `CreateContributionDto`: Used for creating or updating a contribution.
-        * `name`: string (IsString, IsNotEmpty)
-        * `description?`: string (IsOptional)
-        * `date`: string (IsDateString)
-        * `defaultAmount`: number (IsNumber)
-        * `isGeneral?`: boolean (IsBoolean, IsOptional, Default: true)
-        * `links`: `ContributionAffiliateLinkDto[]` (IsArray, ValidateNested, Type(() => ContributionAffiliateLinkDto))
-    * `UpdateContributionDto`: Extends `PartialType(CreateContributionDto)`.
+* **`GET /api/affiliates/:uuid`**
+    * **Descripción**: Obtiene un afiliado específico por su UUID.
+    * **Parámetros de Ruta**: `uuid: string` (UUID del afiliado a buscar).
+    * **Response**: `AffiliateEntity` (HTTP 200 OK)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si el afiliado no existe.
 
-* **Services**:
-    * `ContributionsService`: Handles the business logic for contributions.
-        * `upsert(createDto: CreateContributionDto, id?: number)`: Creates or updates a contribution, including its associated affiliate links, within a transaction.
-        * `findAll()`: Returns all contributions with their links.
-        * `findOne(id: number)`: Returns a single contribution by ID with its links and associated affiliate details. Throws `NotFoundException` if not found.
-        * `remove(id: number)`: Deletes a contribution by ID. Throws `NotFoundException` if not found.
+* **`DELETE /api/affiliates/:uuid`**
+    * **Descripción**: Elimina un afiliado por su UUID.
+    * **Parámetros de Ruta**: `uuid: string` (UUID del afiliado a eliminar).
+    * **Response**: (HTTP 204 No Content)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si el afiliado no existe.
 
-* **Controllers**:
-    * `ContributionsController`: Exposes RESTful endpoints for contribution management under the `/api/contributions` base path.
-        * `POST /api/contributions`
-            * **Description**: Creates a new contribution with its affiliate links.
-            * **Request Body**: `CreateContributionDto`
-            * **Response**: `ContributionEntity` (the saved contribution with links)
-            * **Status Code**: `201 Created` (implicit)
-        * `PATCH /api/contributions/:id`
-            * **Description**: Updates an existing contribution and its affiliate links.
-            * **Path Params**: `id` (number)
-            * **Request Body**: `CreateContributionDto`
-            * **Response**: `ContributionEntity` (the updated contribution with links)
-            * **Status Code**: `200 OK`
-        * `GET /api/contributions`
-            * **Description**: Retrieves all contributions with their affiliate links.
-            * **Response**: `ContributionEntity[]`
-            * **Status Code**: `200 OK`
-        * `GET /api/contributions/:id`
-            * **Description**: Retrieves a single contribution by ID with its affiliate links and associated affiliate information.
-            * **Path Params**: `id` (number)
-            * **Response**: `ContributionEntity`
-            * **Status Code**: `200 OK`
-        * `DELETE /api/contributions/:id`
-            * **Description**: Deletes a contribution by ID.
-            * **Path Params**: `id` (number)
-            * **Response**: No content.
-            * **Status Code**: `204 No Content`
+---
 
-### 1.4. Fines Module
+### 1.2. Módulo de Asistencia (`AttendanceModule`)
 
-Manages fines issued to affiliates.
+Gestiona las listas y registros de asistencia.
 
-* **Entities**:
-    * `FineEntity`: Represents a fine.
-        * `uuid`: string (Primary Column)
-        * `description`: string
-        * `amount`: number (float)
-        * `date`: Date (timestamp)
-        * `status`: string (e.g., 'pending', 'paid')
-        * `affiliateId`: string (Foreign Key to `AffiliateEntity` UUID)
-        * `affiliate`: `AffiliateEntity` (Many-to-One relation)
-        * `createdAt`: Date (Auto-generated timestamp)
-        * `updatedAt`: Date (Auto-generated timestamp)
+#### 1.2.1. Entidades
 
-* **DTOs**:
-    * `CreateFineDto`: Used for creating or updating a fine.
-        * `uuid`: string (IsUUID, IsNotEmpty)
-        * `description`: string (IsString, IsNotEmpty)
-        * `amount`: number (IsNumber, IsPositive)
-        * `date`: string (IsDateString)
-        * `status`: string (IsString, IsNotEmpty)
-        * `affiliateId`: string (IsUUID, IsNotEmpty)
-    * `UpdateFineDto`: Extends `PartialType(CreateFineDto)`.
+* **`AttendanceListEntity`** (`src/attendance/entities/attendance-list.entity.ts`)
+    Representa una lista de asistencia.
 
-* **Services**:
-    * `FinesService`: Handles the business logic for fines.
-        * `upsert(fineData: CreateFineDto)`: Creates a new fine or updates an existing one based on the UUID.
-        * `remove(uuid: string)`: Deletes a fine by UUID. Throws `NotFoundException` if not found.
-        * `findAll()`: Returns all fines with their associated affiliate details.
-        * `findByAffiliate(affiliateId: string)`: Returns all fines for a specific affiliate.
+    | Campo        | Tipo      | Descripción                             | Restricciones             |
+    | :----------- | :-------- | :-------------------------------------- | :------------------------ |
+    | `id`         | `number`  | Identificador único (Primary Key)       | `@PrimaryGeneratedColumn` |
+    | `name`       | `string`  | Nombre de la lista de asistencia        | `@Column`                 |
+    | `created_at` | `Date`    | Fecha de creación de la lista           | `@Column`                 |
+    | `status`     | `string`  | Estado de la lista (ej. 'PREPARADA')    | `@Column`                 |
+    | `records`    | `AttendanceRecordEntity[]` | Registros de asistencia asociados | `@OneToMany`              |
+    | `updated_at` | `Date`    | Última fecha de actualización           | `@UpdateDateColumn`       |
 
-* **Controllers**:
-    * `FinesController`: Exposes RESTful endpoints for fine management under the `/api/fines` base path.
-        * `POST /api/fines`
-            * **Description**: Creates a new fine or updates an existing one (upsert).
-            * **Request Body**: `CreateFineDto`
-            * **Response**: `FineEntity` (the saved fine)
-            * **Status Code**: `200 OK`
-        * `PATCH /api/fines/:uuid`
-            * **Description**: Updates an existing fine. Internally calls the `upsert` service method.
-            * **Request Body**: `CreateFineDto`
-            * **Response**: `FineEntity` (the updated fine)
-            * **Status Code**: `200 OK`
-        * `DELETE /api/fines/:uuid`
-            * **Description**: Deletes a fine by UUID.
-            * **Path Params**: `uuid` (string)
-            * **Response**: No content.
-            * **Status Code**: `204 No Content`
-        * `GET /api/fines`
-            * **Description**: Retrieves all fines with their associated affiliate details.
-            * **Response**: `FineEntity[]`
-            * **Status Code**: `200 OK`
-        * `GET /api/fines/by-affiliate/:affiliateId`
-            * **Description**: Retrieves all fines for a specific affiliate.
-            * **Path Params**: `affiliateId` (string, affiliate's UUID)
-            * **Response**: `FineEntity[]`
-            * **Status Code**: `200 OK`
+* **`AttendanceRecordEntity`** (`src/attendance/entities/attendance-record.entity.ts`)
+    Representa un registro individual de asistencia dentro de una lista.
 
-### 1.5. Sync Module
+    | Campo          | Tipo      | Descripción                             | Restricciones             |
+    | :------------- | :-------- | :-------------------------------------- | :------------------------ |
+    | `id`           | `number`  | Identificador único (Primary Key)       | `@PrimaryGeneratedColumn` |
+    | `listId`       | `number`  | ID de la lista de asistencia a la que pertenece | `@Column`                 |
+    | `affiliateUuid`| `string`  | UUID del afiliado registrado           | `@Column`                 |
+    | `registeredAt` | `Date`    | Fecha y hora del registro de asistencia | `@Column`                 |
+    | `status`       | `string`  | Estado de asistencia (ej. 'PRESENTE')   | `@Column`                 |
+    | `attendanceList`| `AttendanceListEntity` | Relación con la lista de asistencia | `@ManyToOne`              |
+    | `affiliate`    | `AffiliateEntity` | Relación con el afiliado               | `@ManyToOne`              |
 
-Provides endpoints for data synchronization with client applications.
+#### 1.2.2. DTOs
 
-* **Entities**:
-    * `Sync`: This appears to be a placeholder entity and doesn't represent a database table in the provided code.
+* **`CreateAttendanceDto`** (`src/attendance/dto/create-attendance.dto.ts`)
+    Utilizado para crear o actualizar una lista de asistencia, incluyendo sus registros.
 
-* **DTOs**:
-    * `CreateSyncDto`: Empty DTO.
-    * `UpdateSyncDto`: Extends `PartialType(CreateSyncDto)`.
+    | Campo       | Tipo      | Descripción                             |
+    | :---------- | :-------- | :-------------------------------------- |
+    | `name`      | `string`  | Nombre de la lista                      |
+    | `created_at`| `string`  | Fecha de creación (ISO 8601 string)     |
+    | `status`    | `string`  | Estado inicial de la lista              |
+    | `records`   | `AttendanceRecordDto[]` | Array de registros de asistencia|
 
-* **Services**:
-    * `SyncService`: Handles the logic for pulling changes from the database.
-        * `pullChanges(lastSyncTimestamp?: string)`: Fetches all data (affiliates, users, fines, contributions, attendance) that have been updated since a given `lastSyncTimestamp`. If no timestamp is provided, it fetches all data.
+* **`AttendanceRecordDto`** (`src/attendance/dto/attendance-record.dto.ts`)
+    Representa un registro individual de asistencia.
 
-* **Controllers**:
-    * `SyncController`: Exposes synchronization endpoints under the `/api/sync` base path.
-        * `GET /api/sync/pull`
-            * **Description**: Pulls all changes from the backend. Can be filtered by a `lastSync` timestamp to get only recent updates.
-            * **Query Params**: `lastSync` (optional, string in ISO 8601 format)
-            * **Response**: An object containing arrays of updated entities:
-                ```json
+    | Campo         | Tipo      | Descripción                             |
+    | :------------ | :-------- | :-------------------------------------- |
+    | `affiliateUuid`| `string`  | UUID del afiliado                       |
+    | `status`      | `string`  | Estado de asistencia                    |
+    | `registeredAt`| `string`  | Fecha y hora de registro (ISO 8601 string)|
+
+* **`UpdateAttendanceDto`** (`src/attendance/dto/update-attendance.dto.ts`)
+    Extiende `PartialType` de `CreateAttendanceDto`.
+
+#### 1.2.3. Servicios (`AttendanceService`)
+
+* `upsert(createDto: CreateAttendanceDto, id?: number): Promise<AttendanceListEntity>`: Crea una nueva lista de asistencia o actualiza una existente. Si se proporciona `id`, actualiza; de lo contrario, crea. Maneja la creación/actualización y eliminación de `AttendanceRecordEntity` asociados dentro de una transacción.
+* `findAll(): Promise<AttendanceListEntity[]>`: Retorna todas las listas de asistencia con sus registros asociados.
+* `findOne(id: number): Promise<AttendanceListEntity>`: Retorna una lista de asistencia por su ID, incluyendo sus registros y la información del afiliado. Lanza `NotFoundException` si no se encuentra.
+* `remove(id: number): Promise<void>`: Elimina una lista de asistencia por su ID. Lanza `NotFoundException` si no se encuentra.
+
+#### 1.2.4. Endpoints (`AttendanceController`)
+
+**Base URL**: `/api/attendance`
+
+* **`POST /api/attendance`**
+    * **Descripción**: Crea una nueva lista de asistencia con sus registros.
+    * **Request Body**: `CreateAttendanceDto`
+    * **Response**: `AttendanceListEntity` (HTTP 201 Created por defecto de NestJS para POST)
+    * **Ejemplo de Request Body**:
+        ```json
+        {
+          "name": "Asistencia Reunión General",
+          "created_at": "2024-06-20T08:00:00Z",
+          "status": "INICIADA",
+          "records": [
+            {
+              "affiliateUuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "status": "PRESENTE",
+              "registeredAt": "2024-06-20T08:05:00Z"
+            },
+            {
+              "affiliateUuid": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+              "status": "RETRASO",
+              "registeredAt": "2024-06-20T08:15:00Z"
+            }
+          ]
+        }
+        ```
+    * **Ejemplo de Response**:
+        ```json
+        {
+          "id": 1,
+          "name": "Asistencia Reunión General",
+          "created_at": "2024-06-20T08:00:00.000Z",
+          "status": "INICIADA",
+          "updated_at": "2024-06-20T08:00:00.000Z",
+          "records": [
+            {
+              "id": 101,
+              "listId": 1,
+              "affiliateUuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "registeredAt": "2024-06-20T08:05:00.000Z",
+              "status": "PRESENTE",
+              "affiliate": {
+                 "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                 "id": "AP-001",
+                 "first_name": "Juan",
+                 "last_name": "Perez",
+                 "ci": "1234567",
+                 "phone": "555-1234",
+                 "original_affiliate_name": "-",
+                 "current_affiliate_name": "-",
+                 "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+                 "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+                 "tags": ["activo", "directiva"],
+                 "total_paid": 100.50,
+                 "total_debt": 20.00,
+                 "created_at": "2023-10-27T10:00:00.000Z",
+                 "updated_at": "2023-10-27T10:00:00.000Z"
+              }
+            }
+            // ... otros registros
+          ]
+        }
+        ```
+
+* **`PATCH /api/attendance/:id`**
+    * **Descripción**: Actualiza una lista de asistencia existente y sus registros asociados.
+    * **Parámetros de Ruta**: `id: number` (ID de la lista de asistencia).
+    * **Request Body**: `CreateAttendanceDto`
+    * **Response**: `AttendanceListEntity` (HTTP 200 OK)
+
+* **`GET /api/attendance`**
+    * **Descripción**: Obtiene todas las listas de asistencia.
+    * **Response**: `AttendanceListEntity[]` (HTTP 200 OK)
+
+* **`GET /api/attendance/:id`**
+    * **Descripción**: Obtiene una lista de asistencia específica por su ID.
+    * **Parámetros de Ruta**: `id: number` (ID de la lista de asistencia).
+    * **Response**: `AttendanceListEntity` (HTTP 200 OK)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si la lista no existe.
+
+* **`DELETE /api/attendance/:id`**
+    * **Descripción**: Elimina una lista de asistencia por su ID.
+    * **Parámetros de Ruta**: `id: number` (ID de la lista de asistencia).
+    * **Response**: (HTTP 204 No Content)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si la lista no existe.
+
+---
+
+### 1.3. Módulo de Contribuciones (`ContributionsModule`)
+
+Gestiona las contribuciones y los enlaces de contribución a afiliados.
+
+#### 1.3.1. Entidades
+
+* **`ContributionEntity`** (`src/contributions/entities/contribution.entity.ts`)
+    Representa una contribución general.
+
+    | Campo          | Tipo      | Descripción                             | Restricciones             |
+    | :------------- | :-------- | :-------------------------------------- | :------------------------ |
+    | `id`           | `number`  | Identificador único (Primary Key)       | `@PrimaryGeneratedColumn` |
+    | `name`         | `string`  | Nombre de la contribución               | `@Column`                 |
+    | `description`  | `string`  | Descripción (opcional)                  | `@Column`, `nullable`     |
+    | `date`         | `Date`    | Fecha de la contribución                | `@Column`                 |
+    | `defaultAmount`| `number`  | Cantidad predeterminada de la contribución | `@Column` (`total_amount`)|
+    | `isGeneral`    | `boolean` | Indica si es una contribución general   | `@Column`, `default: true`|
+    | `links`        | `ContributionAffiliateLinkEntity[]` | Enlaces a afiliados específicos | `@OneToMany`              |
+    | `created_at`   | `Date`    | Fecha de creación                       | `@CreateDateColumn`       |
+    | `updated_at`   | `Date`    | Última fecha de actualización           | `@UpdateDateColumn`       |
+
+* **`ContributionAffiliateLinkEntity`** (`src/contributions/entities/contribution-affiliate-link.entity.ts`)
+    Representa el enlace entre una contribución y un afiliado, detallando la cantidad a pagar y pagada.
+
+    | Campo            | Tipo      | Descripción                             | Restricciones             |
+    | :--------------- | :-------- | :-------------------------------------- | :------------------------ |
+    | `contributionId` | `number`  | ID de la contribución (Primary Key Parte)| `@PrimaryColumn`          |
+    | `affiliateUuid`  | `string`  | UUID del afiliado (Primary Key Parte)   | `@PrimaryColumn`          |
+    | `amountToPay`    | `number`  | Cantidad que el afiliado debe pagar     | `@Column`                 |
+    | `amountPaid`     | `number`  | Cantidad que el afiliado ya pagó (default 0.0) | `@Column`                 |
+    | `isPaid`         | `boolean` | Indica si la contribución ha sido pagada (default false) | `@Column`                 |
+    | `contribution`   | `ContributionEntity` | Relación con la contribución | `@ManyToOne`              |
+    | `affiliate`      | `AffiliateEntity` | Relación con el afiliado       | `@ManyToOne`              |
+
+#### 1.3.2. DTOs
+
+* **`CreateContributionDto`** (`src/contributions/dto/create-contribution.dto.ts`)
+    Utilizado para crear o actualizar una contribución.
+
+    | Campo          | Tipo      | Descripción                             |
+    | :------------- | :-------- | :-------------------------------------- |
+    | `name`         | `string`  | Nombre de la contribución               |
+    | `description`  | `string`  | Descripción (opcional)                  |
+    | `date`         | `string`  | Fecha (ISO 8601 string)                 |
+    | `defaultAmount`| `number`  | Cantidad por defecto                    |
+    | `isGeneral`    | `boolean` | Indica si es general (opcional, default true)|
+    | `links`        | `ContributionAffiliateLinkDto[]` | Array de enlaces a afiliados    |
+
+* **`ContributionAffiliateLinkDto`** (`src/contributions/dto/contribution-affiliate-link.dto.ts`)
+    Representa un enlace de contribución para un afiliado.
+
+    | Campo         | Tipo      | Descripción                             |
+    | :------------ | :-------- | :-------------------------------------- |
+    | `affiliateUuid`| `string`  | UUID del afiliado                       |
+    | `amountToPay` | `number`  | Cantidad a pagar por el afiliado        |
+    | `amountPaid`  | `number`  | Cantidad pagada (opcional, default 0.0) |
+    | `isPaid`      | `boolean` | Si está pagada (opcional, default false)|
+
+* **`UpdateContributionDto`** (`src/contributions/dto/update-contribution.dto.ts`)
+    Extiende `PartialType` de `CreateContributionDto`.
+
+#### 1.3.3. Servicios (`ContributionsService`)
+
+* `upsert(createDto: CreateContributionDto, id?: number): Promise<ContributionEntity>`: Crea una nueva contribución o actualiza una existente. Maneja la eliminación y recreación de `ContributionAffiliateLinkEntity` asociados dentro de una transacción.
+* `findAll(): Promise<ContributionEntity[]>`: Retorna todas las contribuciones con sus enlaces.
+* `findOne(id: number): Promise<ContributionEntity>`: Retorna una contribución por su ID, incluyendo sus enlaces y la información del afiliado. Lanza `NotFoundException` si no se encuentra.
+* `remove(id: number): Promise<void>`: Elimina una contribución por su ID. Lanza `NotFoundException` si no se encuentra.
+
+#### 1.3.4. Endpoints (`ContributionsController`)
+
+**Base URL**: `/api/contributions`
+
+* **`POST /api/contributions`**
+    * **Descripción**: Crea una nueva contribución, incluyendo sus enlaces a afiliados.
+    * **Request Body**: `CreateContributionDto`
+    * **Response**: `ContributionEntity` (HTTP 201 Created por defecto de NestJS para POST)
+    * **Ejemplo de Request Body**:
+        ```json
+        {
+          "name": "Cuota Mensual Enero",
+          "description": "Cuota regular de enero",
+          "date": "2024-01-01T00:00:00Z",
+          "defaultAmount": 25.00,
+          "isGeneral": true,
+          "links": [
+            {
+              "affiliateUuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "amountToPay": 25.00,
+              "amountPaid": 25.00,
+              "isPaid": true
+            },
+            {
+              "affiliateUuid": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+              "amountToPay": 25.00,
+              "amountPaid": 0.0,
+              "isPaid": false
+            }
+          ]
+        }
+        ```
+    * **Ejemplo de Response**:
+        ```json
+        {
+          "id": 1,
+          "name": "Cuota Mensual Enero",
+          "description": "Cuota regular de enero",
+          "date": "2024-01-01T00:00:00.000Z",
+          "defaultAmount": 25.00,
+          "isGeneral": true,
+          "created_at": "2024-06-20T10:00:00.000Z",
+          "updated_at": "2024-06-20T10:00:00.000Z",
+          "links": [
+            {
+              "contributionId": 1,
+              "affiliateUuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "amountToPay": 25,
+              "amountPaid": 25,
+              "isPaid": true,
+              "affiliate": {
+                 "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                 "id": "AP-001",
+                 "first_name": "Juan",
+                 "last_name": "Perez",
+                 "ci": "1234567",
+                 "phone": "555-1234",
+                 "original_affiliate_name": "-",
+                 "current_affiliate_name": "-",
+                 "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+                 "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+                 "tags": ["activo", "directiva"],
+                 "total_paid": 100.50,
+                 "total_debt": 20.00,
+                 "created_at": "2023-10-27T10:00:00.000Z",
+                 "updated_at": "2023-10-27T10:00:00.000Z"
+              }
+            }
+            // ... otros enlaces
+          ]
+        }
+        ```
+
+* **`PATCH /api/contributions/:id`**
+    * **Descripción**: Actualiza una contribución existente y sus enlaces.
+    * **Parámetros de Ruta**: `id: number` (ID de la contribución).
+    * **Request Body**: `CreateContributionDto`
+    * **Response**: `ContributionEntity` (HTTP 200 OK)
+
+* **`GET /api/contributions`**
+    * **Descripción**: Obtiene todas las contribuciones.
+    * **Response**: `ContributionEntity[]` (HTTP 200 OK)
+
+* **`GET /api/contributions/:id`**
+    * **Descripción**: Obtiene una contribución específica por su ID.
+    * **Parámetros de Ruta**: `id: number` (ID de la contribución).
+    * **Response**: `ContributionEntity` (HTTP 200 OK)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si la contribución no existe.
+
+* **`DELETE /api/contributions/:id`**
+    * **Descripción**: Elimina una contribución por su ID.
+    * **Parámetros de Ruta**: `id: number` (ID de la contribución).
+    * **Response**: (HTTP 204 No Content)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si la contribución no existe.
+
+---
+
+### 1.4. Módulo de Multas (`FinesModule`)
+
+Gestiona las multas impuestas a los afiliados.
+
+#### 1.4.1. Entidad: `FineEntity` (`src/fines/entities/fine.entity.ts`)
+
+Representa una multa.
+
+| Campo        | Tipo      | Descripción                             | Restricciones            |
+| :----------- | :-------- | :-------------------------------------- | :----------------------- |
+| `uuid`       | `string`  | Identificador único universal (Primary Key)| `@PrimaryColumn`, `UUID` |
+| `description`| `string`  | Descripción de la multa                 | `@Column`                |
+| `amount`     | `number`  | Cantidad de la multa                    | `float`, `@Column`       |
+| `date`       | `Date`    | Fecha de la multa                       | `@Column`                |
+| `status`     | `string`  | Estado de la multa (ej. 'pending', 'paid')| `@Column`                |
+| `affiliateId`| `string`  | UUID del afiliado asociado              | `@Column`                |
+| `affiliate`  | `AffiliateEntity` | Relación con el afiliado              | `@ManyToOne`             |
+| `created_at` | `Date`    | Fecha de creación                       | `@CreateDateColumn`      |
+| `updated_at` | `Date`    | Última fecha de actualización           | `@UpdateDateColumn`      |
+
+#### 1.4.2. DTOs
+
+* **`CreateFineDto`** (`src/fines/dto/create-fine.dto.ts`)
+    Utilizado para crear o actualizar una multa.
+
+    | Campo        | Tipo      | Descripción                             |
+    | :----------- | :-------- | :-------------------------------------- |
+    | `uuid`       | `string`  | UUID de la multa                        |
+    | `description`| `string`  | Descripción                             |
+    | `amount`     | `number`  | Cantidad                                |
+    | `date`       | `string`  | Fecha (ISO 8601 string)                 |
+    | `status`     | `string`  | Estado                                  |
+    | `affiliateId`| `string`  | UUID del afiliado                       |
+
+* **`UpdateFineDto`** (`src/fines/dto/update-fine.dto.ts`)
+    Extiende `PartialType` de `CreateFineDto`.
+
+#### 1.4.3. Servicios (`FinesService`)
+
+* `upsert(fineData: CreateFineDto): Promise<FineEntity>`: Crea una nueva multa o actualiza una existente.
+* `remove(uuid: string): Promise<void>`: Elimina una multa por su `uuid`. Lanza `NotFoundException` si no se encuentra.
+* `findAll(): Promise<FineEntity[]>`: Retorna todas las multas con sus afiliados relacionados.
+* `findByAffiliate(affiliateId: string): Promise<FineEntity[]>`: Retorna todas las multas de un afiliado específico por su `affiliateId`.
+
+#### 1.4.4. Endpoints (`FinesController`)
+
+**Base URL**: `/api/fines`
+
+* **`POST /api/fines`**
+    * **Descripción**: Crea o actualiza una multa.
+    * **Request Body**: `CreateFineDto`
+    * **Response**: `FineEntity` (HTTP 200 OK)
+    * **Ejemplo de Request Body**:
+        ```json
+        {
+          "uuid": "f1e2d3c4-b5a6-7890-1234-567890abcdef",
+          "description": "Multa por retraso en reunión",
+          "amount": 10.00,
+          "date": "2024-06-15T14:30:00Z",
+          "status": "pending",
+          "affiliateId": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        }
+        ```
+    * **Ejemplo de Response**:
+        ```json
+        {
+          "uuid": "f1e2d3c4-b5a6-7890-1234-567890abcdef",
+          "description": "Multa por retraso en reunión",
+          "amount": 10,
+          "date": "2024-06-15T14:30:00.000Z",
+          "status": "pending",
+          "affiliateId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+          "created_at": "2024-06-20T10:00:00.000Z",
+          "updated_at": "2024-06-20T10:00:00.000Z"
+        }
+        ```
+
+* **`PATCH /api/fines/:uuid`**
+    * **Descripción**: Actualiza una multa existente.
+    * **Parámetros de Ruta**: `uuid: string` (UUID de la multa, aunque la lógica usa el UUID del cuerpo).
+    * **Request Body**: `CreateFineDto`
+    * **Response**: `FineEntity` (HTTP 200 OK)
+
+* **`DELETE /api/fines/:uuid`**
+    * **Descripción**: Elimina una multa por su UUID.
+    * **Parámetros de Ruta**: `uuid: string` (UUID de la multa a eliminar).
+    * **Response**: (HTTP 204 No Content)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si la multa no existe.
+
+* **`GET /api/fines`**
+    * **Descripción**: Obtiene todas las multas.
+    * **Response**: `FineEntity[]` (HTTP 200 OK)
+
+* **`GET /api/fines/by-affiliate/:affiliateId`**
+    * **Descripción**: Obtiene todas las multas asociadas a un afiliado específico.
+    * **Parámetros de Ruta**: `affiliateId: string` (UUID del afiliado).
+    * **Response**: `FineEntity[]` (HTTP 200 OK)
+    * **Ejemplo de Response**:
+        ```json
+        [
+          {
+            "uuid": "f1e2d3c4-b5a6-7890-1234-567890abcdef",
+            "description": "Multa por retraso en reunión",
+            "amount": 10,
+            "date": "2024-06-15T14:30:00.000Z",
+            "status": "pending",
+            "affiliateId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+            "created_at": "2024-06-20T10:00:00.000Z",
+            "updated_at": "2024-06-20T10:00:00.000Z",
+            "affiliate": {
+                 "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                 "id": "AP-001",
+                 "first_name": "Juan",
+                 "last_name": "Perez",
+                 "ci": "1234567",
+                 "phone": "555-1234",
+                 "original_affiliate_name": "-",
+                 "current_affiliate_name": "-",
+                 "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+                 "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+                 "tags": ["activo", "directiva"],
+                 "total_paid": 100.50,
+                 "total_debt": 20.00,
+                 "created_at": "2023-10-27T10:00:00.000Z",
+                 "updated_at": "2023-10-27T10:00:00.000Z"
+              }
+          }
+        ]
+        ```
+
+---
+
+### 1.5. Módulo de Sincronización (`SyncModule`)
+
+Gestiona la lógica para la sincronización de datos entre el cliente (Flutter) y el servidor.
+
+#### 1.5.1. Entidad: `SyncEntity` (`src/sync/entities/sync.entity.ts`)
+
+Actualmente es una entidad de marcador de posición y no tiene campos definidos.
+
+#### 1.5.2. DTOs
+
+* **`CreateSyncDto`** (`src/sync/dto/create-sync.dto.ts`)
+    Actualmente es un DTO de marcador de posición y no tiene campos definidos.
+* **`UpdateSyncDto`** (`src/sync/dto/update-sync.dto.ts`)
+    Extiende `PartialType` de `CreateSyncDto`.
+
+#### 1.5.3. Servicios (`SyncService`)
+
+* `pullChanges(lastSyncTimestamp?: string)`: Retorna todos los datos de los diferentes módulos (afiliados, usuarios, multas, contribuciones, asistencia) que hayan sido actualizados **después** del `lastSyncTimestamp` proporcionado. Si no se proporciona un `lastSyncTimestamp`, retorna todos los datos.
+    * Para `ContributionEntity`, carga la relación `links`.
+    * Para `AttendanceListEntity`, carga la relación `records`.
+
+#### 1.5.4. Endpoints (`SyncController`)
+
+**Base URL**: `/api/sync`
+
+* **`GET /api/sync/pull`**
+    * **Descripción**: Sincroniza datos desde el servidor. Opcionalmente, puede recibir un `lastSync` timestamp para solo obtener los cambios recientes.
+    * **Parámetros de Query**: `lastSync?: string` (Timestamp ISO 8601 del último momento de sincronización del cliente).
+    * **Response**: Objeto JSON que contiene arrays de las entidades de cada módulo. (HTTP 200 OK)
+    * **Ejemplo de Request**:
+        ```
+        GET /api/sync/pull?lastSync=2024-06-19T10:30:00Z
+        ```
+    * **Ejemplo de Response**:
+        ```json
+        {
+          "affiliates": [
+            {
+              "uuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "id": "AP-001",
+              "first_name": "Juan",
+              "last_name": "Perez",
+              "ci": "1234567",
+              "phone": "555-1234",
+              "original_affiliate_name": "-",
+              "current_affiliate_name": "-",
+              "profile_photo_url": "[http://example.com/photo.jpg](http://example.com/photo.jpg)",
+              "credential_photo_url": "[http://example.com/credential.jpg](http://example.com/credential.jpg)",
+              "tags": ["activo", "directiva"],
+              "total_paid": 100.50,
+              "total_debt": 20.00,
+              "created_at": "2023-10-27T10:00:00.000Z",
+              "updated_at": "2024-06-20T09:00:00.000Z"
+            }
+          ],
+          "users": [
+            {
+              "uuid": "u1v2w3x4-y5z6-7890-1234-567890abcdef",
+              "user_name": "admin",
+              "password": "hashedpassword",
+              "email": "admin@example.com",
+              "role": "admin",
+              "created_at": "2024-01-01T00:00:00.000Z",
+              "updated_at": "2024-06-20T09:30:00.000Z"
+            }
+          ],
+          "fines": [
+            {
+              "uuid": "f1e2d3c4-b5a6-7890-1234-567890abcdef",
+              "description": "Multa por retraso",
+              "amount": 10,
+              "date": "2024-06-15T14:30:00.000Z",
+              "status": "pending",
+              "affiliateId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "created_at": "2024-06-20T10:00:00.000Z",
+              "updated_at": "2024-06-20T10:00:00.000Z"
+            }
+          ],
+          "contributions": [
+            {
+              "id": 1,
+              "name": "Cuota Mensual Enero",
+              "description": "Cuota regular de enero",
+              "date": "2024-01-01T00:00:00.000Z",
+              "defaultAmount": 25,
+              "isGeneral": true,
+              "created_at": "2024-06-20T10:00:00.000Z",
+              "updated_at": "2024-06-20T10:00:00.000Z",
+              "links": [
                 {
-                  "affiliates": [
-                    { /* AffiliateEntity object */ }
-                  ],
-                  "users": [
-                    { /* UserEntity object */ }
-                  ],
-                  "fines": [
-                    { /* FineEntity object */ }
-                  ],
-                  "contributions": [
-                    { /* ContributionEntity object with 'links' relation */ }
-                  ],
-                  "attendance": [
-                    { /* AttendanceListEntity object with 'records' relation */ }
-                  ]
+                  "contributionId": 1,
+                  "affiliateUuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                  "amountToPay": 25,
+                  "amountPaid": 25,
+                  "isPaid": true
                 }
-                ```
-            * **Status Code**: `200 OK`
+              ]
+            }
+          ],
+          "attendance": [
+            {
+              "id": 1,
+              "name": "Asistencia Reunión General",
+              "created_at": "2024-06-20T08:00:00.000Z",
+              "status": "INICIADA",
+              "updated_at": "2024-06-20T08:00:00.000Z",
+              "records": [
+                {
+                  "id": 101,
+                  "listId": 1,
+                  "affiliateUuid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                  "registeredAt": "2024-06-20T08:05:00.000Z",
+                  "status": "PRESENTE"
+                }
+              ]
+            }
+          ]
+        }
+        ```
 
-### 1.6. Users Module
+---
 
-Manages user accounts.
+### 1.6. Módulo de Usuarios (`UsersModule`)
 
-* **Entities**:
-    * `UserEntity`: Represents a user in the database.
-        * `uuid`: string (Primary Column)
-        * `username`: string (Unique)
-        * `password`: string
-        * `email`: string (Unique)
-        * `role`: string
-        * `createdAt`: Date (Auto-generated timestamp)
-        * `updatedAt`: Date (Auto-generated timestamp)
+Gestiona la información de los usuarios del sistema (no afiliados).
 
-* **DTOs**:
-    * `CreateUserDto`: Used for creating or updating a user.
-        * `uuid`: string (IsUUID, IsNotEmpty)
-        * `username`: string (IsString, IsNotEmpty)
-        * `password`: string (IsString, IsNotEmpty)
-        * `email`: string (IsEmail, IsNotEmpty)
-        * `role`: string (IsString, IsNotEmpty)
-    * `UpdateUserDto`: Extends `PartialType(CreateUserDto)`.
+#### 1.6.1. Entidad: `UserEntity` (`src/users/entities/user.entity.ts`)
 
-* **Services**:
-    * `UsersService`: Handles the business logic for users.
-        * `upsert(userData: CreateUserDto)`: Creates a new user or updates an existing one based on the UUID. Includes checks for unique username and email to prevent conflicts.
-        * `remove(uuid: string)`: Deletes a user by UUID. Throws `NotFoundException` if not found.
-        * `findAll()`: Returns all users.
-        * `validateUser(username: string, pass: string)`: Validates user credentials. (Note: Password hashing is commented out in the provided code, but recommended for production).
+Representa un usuario del sistema.
 
-* **Controllers**:
-    * `UsersController`: Exposes RESTful endpoints for user management under the `/api/users` base path.
-        * `POST /api/users`
-            * **Description**: Creates a new user or updates an existing one (upsert).
-            * **Request Body**: `CreateUserDto`
-            * **Response**: `UserEntity` (the saved user)
-            * **Status Code**: `200 OK`
-        * `PATCH /api/users/:uuid`
-            * **Description**: Updates an existing user. Internally calls the `upsert` service method.
-            * **Request Body**: `CreateUserDto`
-            * **Response**: `UserEntity` (the updated user)
-            * **Status Code**: `200 OK`
-        * `DELETE /api/users/:uuid`
-            * **Description**: Deletes a user by UUID.
-            * **Path Params**: `uuid` (string)
-            * **Response**: No content.
-            * **Status Code**: `204 No Content`
-        * `GET /api/users`
-            * **Description**: Retrieves all users.
-            * **Response**: `UserEntity[]`
-            * **Status Code**: `200 OK`
+| Campo        | Tipo      | Descripción                             | Restricciones            |
+| :----------- | :-------- | :-------------------------------------- | :----------------------- |
+| `uuid`       | `string`  | Identificador único universal (Primary Key)| `@PrimaryColumn`, `UUID` |
+| `user_name`  | `string`  | Nombre de usuario                       | `@Column`, `unique`      |
+| `password`   | `string`  | Contraseña (debería ser hasheada)       | `@Column`                |
+| `email`      | `string`  | Correo electrónico del usuario          | `@Column`, `unique`      |
+| `role`       | `string`  | Rol del usuario (ej. 'admin', 'user')   | `@Column`                |
+| `created_at` | `Date`    | Fecha de creación                       | `@CreateDateColumn`      |
+| `updated_at` | `Date`    | Última fecha de actualización           | `@UpdateDateColumn`      |
 
-## 2. Application Setup
+#### 1.6.2. DTOs
 
-* **`main.ts`**: The entry point of the NestJS application. It creates and starts the NestJS application, listening on port `3000`.
-* **`app.module.ts`**: The root module that integrates all other modules.
-    * Configures `ConfigModule` for environment variable loading (`.env` files).
-    * Sets up `TypeOrmModule.forRootAsync` for database connection, allowing dynamic configuration based on environment variables (e.g., `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `STAGE`).
-    * Includes conditional SSL configuration for production environments (e.g., Render/Neon).
-    * Imports `AffiliatesModule`, `UsersModule`, `ContributionsModule`, `FinesModule`, `AttendanceModule`, and `SyncModule`.
-* **`app.controller.ts`** and **`app.service.ts`**: Provide a basic root endpoint (`/`) that returns "Hello World!".
+* **`CreateUserDto`** (`src/users/dto/create-user.dto.ts`)
+    Utilizado para la creación y actualización de usuarios.
 
-## 3. Database Interactions (TypeORM)
+    | Campo       | Tipo      | Descripción                             |
+    | :---------- | :-------- | :-------------------------------------- |
+    | `uuid`      | `string`  | UUID del usuario                        |
+    | `user_name` | `string`  | Nombre de usuario                       |
+    | `password`  | `string`  | Contraseña                              |
+    | `email`     | `string`  | Correo electrónico                      |
+    | `role`      | `string`  | Rol del usuario                         |
 
-* **Entities**: Defined using `@Entity` and `@Column` decorators to map TypeScript classes to database tables and columns.
-* **Repositories**: Injected into services using `@InjectRepository` to interact with database tables.
-* **Transactions**: Used in `AttendanceService` and `ContributionsService` via `EntityManager` to ensure data consistency when saving or updating an entity and its related nested entities (e.g., `AttendanceListEntity` and `AttendanceRecordEntity`).
-* **Relations**: Defined using `@OneToMany`, `@ManyToOne`, and `@JoinColumn` decorators to establish relationships between entities (e.g., an `AttendanceListEntity` has many `AttendanceRecordEntity` instances).
-* **Upsert Logic**: The `save` method of TypeORM repositories is leveraged for "upsert" functionality (insert or update) when a primary key is provided. For entities with nested relations, a custom `upsert` logic is implemented to handle the deletion of old child records before inserting new ones.
+* **`UpdateUserDto`** (`src/users/dto/update-user.dto.ts`)
+    Extiende `PartialType` de `CreateUserDto`.
 
-## 4. Validation
+#### 1.6.3. Servicios (`UsersService`)
 
-* **`class-validator`**: Used in DTOs (`CreateAffiliateDto`, `CreateAttendanceDto`, etc.) with decorators like `@IsUUID`, `@IsString`, `@IsNotEmpty`, `@IsOptional`, `@IsNumber`, `@IsBoolean`, `@IsDateString`, `@IsUrl`, `@IsArray`, `@ValidateNested`, `@IsPositive`, `@IsEmail` to ensure incoming request data adheres to defined rules.
-* **`ValidationPipe`**: Although not explicitly shown in `main.ts`, NestJS typically integrates `class-validator` automatically when `ValidationPipe` is configured globally, which applies these validation rules to incoming request bodies.
+* `upsert(userData: CreateUserDto): Promise<UserEntity>`: Crea un nuevo usuario o actualiza uno existente. Incluye validación para evitar nombres de usuario o correos electrónicos duplicados.
+* `remove(uuid: string): Promise<void>`: Elimina un usuario por su `uuid`. Lanza `NotFoundException` si no se encuentra.
+* `findAll(): Promise<UserEntity[]>`: Retorna todos los usuarios.
+* `validateUser(user_name: string, pass: string): Promise<any>`: Valida las credenciales de un usuario. (Nota: En una aplicación real, la contraseña se compararía con un hash).
 
-## 5. Error Handling
+#### 1.6.4. Endpoints (`UsersController`)
 
-* **`NotFoundException`**: Thrown by services when an entity is not found during `findOne` or `remove` operations.
-* **`ConflictException`**: Thrown by `UsersService` if a new user attempts to register with an existing username or email.
+**Base URL**: `/api/users`
+
+* **`POST /api/users`**
+    * **Descripción**: Crea o actualiza un usuario.
+    * **Request Body**: `CreateUserDto`
+    * **Response**: `UserEntity` (HTTP 200 OK)
+    * **Errores**: `ConflictException` (HTTP 409 Conflict) si el nombre de usuario o correo electrónico ya están en uso.
+    * **Ejemplo de Request Body**:
+        ```json
+        {
+          "uuid": "u1v2w3x4-y5z6-7890-1234-567890abcdef",
+          "user_name": "newuser",
+          "password": "securepassword123",
+          "email": "newuser@example.com",
+          "role": "user"
+        }
+        ```
+    * **Ejemplo de Response**:
+        ```json
+        {
+          "uuid": "u1v2w3x4-y5z6-7890-1234-567890abcdef",
+          "user_name": "newuser",
+          "password": "securepassword123",
+          "email": "newuser@example.com",
+          "role": "user",
+          "created_at": "2024-06-20T10:00:00.000Z",
+          "updated_at": "2024-06-20T10:00:00.000Z"
+        }
+        ```
+
+* **`PATCH /api/users/:uuid`**
+    * **Descripción**: Actualiza un usuario existente.
+    * **Parámetros de Ruta**: `uuid: string` (UUID del usuario, aunque la lógica usa el UUID del cuerpo).
+    * **Request Body**: `CreateUserDto`
+    * **Response**: `UserEntity` (HTTP 200 OK)
+    * **Errores**: `ConflictException` (HTTP 409 Conflict) si el nombre de usuario o correo electrónico ya están en uso.
+
+* **`DELETE /api/users/:uuid`**
+    * **Descripción**: Elimina un usuario por su UUID.
+    * **Parámetros de Ruta**: `uuid: string` (UUID del usuario a eliminar).
+    * **Response**: (HTTP 204 No Content)
+    * **Errores**: `NotFoundException` (HTTP 404 Not Found) si el usuario no existe.
+
+* **`GET /api/users`**
+    * **Descripción**: Obtiene una lista de todos los usuarios.
+    * **Response**: `UserEntity[]` (HTTP 200 OK)
+
+---
+
+## 2. Configuración General de la Aplicación
+
+### 2.1. `AppModule` (`src/app.module.ts`)
+
+El módulo raíz de la aplicación.
+
+* **`ConfigModule`**: Se usa para cargar variables de entorno, haciéndolas disponibles globalmente.
+* **`TypeOrmModule.forRootAsync`**: Configuración asíncrona de la conexión a la base de datos PostgreSQL.
+    * Obtiene las credenciales de la base de datos de las variables de entorno (`DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`).
+    * Configura `synchronize: true` para desarrollo (esto sincronizará automáticamente el esquema de la base de datos con las entidades TypeORM, **no recomendado para producción**).
+    * En modo producción (`STAGE=prod`), añade configuración SSL para la conexión a la base de datos (ej. Neon).
+* **Módulos Importados**: Integra todos los módulos de negocio (`AffiliatesModule`, `UsersModule`, `ContributionsModule`, `FinesModule`, `AttendanceModule`, `SyncModule`).
+
+### 2.2. `main.ts` (`src/main.ts`)
+
+Punto de entrada de la aplicación.
+
+* Crea una instancia de la aplicación NestJS.
+* La aplicación escucha en el puerto `3000`.
+
+### 2.3. `AppService` (`src/app.service.ts`)
+
+Un servicio básico que retorna un mensaje de "Hello World!".
+
+### 2.4. `AppController` (`src/app.controller.ts`)
+
+Un controlador básico que expone un endpoint raíz para el mensaje de "Hello World!".
+
+* **`GET /`**
+    * **Descripción**: Retorna un mensaje de bienvenida simple.
+    * **Response**: `string` (HTTP 200 OK)
+    * **Ejemplo de Response**:
+        ```
+        "Hello World!"
+        ```
+
+---

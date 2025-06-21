@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Delete, Patch, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete, Patch, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { AffiliatesService } from './affiliates.service';
 import { CreateAffiliateDto } from './dto/create-affiliate.dto';
 
@@ -20,6 +20,7 @@ export class AffiliatesController {
   }
 
   @Patch(':uuid') // El uuid en el path es opcional, la lógica se basa en el body
+  @Put(':uuid')
   update(@Body() createAffiliateDto: CreateAffiliateDto) {
     // Reutilizamos el DTO y el método de servicio.
     return this.affiliatesService.upsert(createAffiliateDto);
