@@ -13,8 +13,8 @@ export class UsersController {
     return this.usersService.upsert(createUserDto);
   }
 
-  @Patch(':uuid')
   @Put(':uuid')
+  @Patch(':uuid')
   update(
     @Param('uuid') uuid: string,
     @Body() updateUserDto: UpdateUserDto
