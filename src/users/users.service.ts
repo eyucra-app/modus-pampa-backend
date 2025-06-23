@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 // En una app real, importarías bcrypt aquí
 // import * as bcrypt from 'bcrypt';
 
@@ -54,4 +55,20 @@ export class UsersService {
     }
     return null;
   }
+
+  async update(uuid: string, updateData: UpdateUserDto): Promise<UserEntity> {
+    // 1. Buscamos el usuario existente para asegurarnos de que existe.
+    const user = await this.usersRepository.preload({
+      uuid: uuid,
+      ...updateData,
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuario con UUID '${uuid}' no encontrado.`);
+    }
+
+    // 2. Guardamos los cambios. TypeORM se encarga de aplicar los campos parciales.
+    return this.usersRepository.save(user);
+  }
+
 }
