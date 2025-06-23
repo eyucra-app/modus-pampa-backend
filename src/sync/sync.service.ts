@@ -22,15 +22,15 @@ export class SyncService {
       ? { where: { updated_at: MoreThan(new Date(lastSyncTimestamp)) } }
       : {};
 
-    // <<<--- CORRECCIÓN AQUÍ: Se cambió 'details' por 'links' para contribuciones.
-    // 'records' para asistencia ya era correcto.
+    const fineQueryOptions = { ...queryOptions, relations: ['affiliate'] };
     const contributionQueryOptions = { ...queryOptions, relations: ['links'] };
     const attendanceQueryOptions = { ...queryOptions, relations: ['records'] };
 
     const [affiliates, users, fines, contributions, attendance] = await Promise.all([
       this.affiliatesRepo.find(queryOptions),
       this.usersRepo.find(queryOptions),
-      this.finesRepo.find(queryOptions),
+      // Usamos las nuevas opciones para la consulta de multas
+      this.finesRepo.find(fineQueryOptions),
       this.contributionsRepo.find(contributionQueryOptions),
       this.attendanceRepo.find(attendanceQueryOptions),
     ]);
