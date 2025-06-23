@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Param, Delete, Patch, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete, Patch, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { FinesService } from './fines.service';
 import { CreateFineDto } from './dto/create-fine.dto';
+import { UpdateFineDto } from './dto/update-fine.dto';
 
 @Controller('api/fines')
 export class FinesController {
@@ -12,9 +13,12 @@ export class FinesController {
     return this.finesService.upsert(createFineDto);
   }
 
+  @Put(':uuid') 
   @Patch(':uuid')
-  update(@Body() createFineDto: CreateFineDto) {
-    return this.finesService.upsert(createFineDto);
+  update(
+    @Param('uuid') uuid: string,
+    @Body() updateFineDto: UpdateFineDto) {
+    return this.finesService.update(uuid, updateFineDto);
   }
 
   @Delete(':uuid')
