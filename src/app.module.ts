@@ -36,8 +36,8 @@ import { UsersModule } from './users/users.module';
           database: configService.get<string>('DB_NAME'),
           autoLoadEntities: true,
           // Sincroniza solo si NO es producción
-          synchronize: !isProduction, 
-          //synchronize: true, 
+          //synchronize: !isProduction, 
+          synchronize: true, 
         };
 
         if (isProduction) {

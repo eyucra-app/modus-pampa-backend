@@ -47,7 +47,7 @@ export class CreateAffiliateDto {
   @IsArray()
   @IsString({ each: true }) // Valida que cada elemento del array sea un string
   @IsOptional()
-  tags?: string[] = [];
+  tags?: string[];
 
   @IsNumber()
   @IsOptional()
