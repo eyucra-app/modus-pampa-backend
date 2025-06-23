@@ -3,7 +3,7 @@ import { IsUUID, IsString, IsNotEmpty, IsDateString } from 'class-validator';
 export class AttendanceRecordDto {
   @IsUUID()
   @IsNotEmpty()
-  affiliateUuid: string;
+  affiliate_uuid: string;
 
   @IsString()
   @IsNotEmpty()
@@ -11,5 +11,5 @@ export class AttendanceRecordDto {
 
   @IsDateString()
   @IsNotEmpty()
-  registeredAt: string;
+  registered_at: string;
 }

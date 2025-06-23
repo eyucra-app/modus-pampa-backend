@@ -32,6 +32,6 @@ export class FinesService {
 
   // Método extra: Encontrar todas las multas de un afiliado
   findByAffiliate(affiliateId: string): Promise<FineEntity[]> {
-      return this.finesRepository.findBy({ affiliateId });
+      return this.finesRepository.findBy({ affiliate_uuid: affiliateId });
   }
 }

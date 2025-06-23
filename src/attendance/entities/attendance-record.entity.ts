@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { AttendanceListEntity } from './attendance-list.entity';
 import { AffiliateEntity } from 'src/affiliates/entities/affiliate.entity';
 
@@ -9,16 +9,23 @@ export class AttendanceRecordEntity {
 
   // Claves foráneas
   @Column({ name: 'list_id' })
-  listId: number;
+  list_id: number;
 
   @Column({ name: 'affiliate_uuid' })
-  affiliateUuid: string;
+  affiliate_uuid: string;
 
   @Column({ name: 'registered_at', type: 'timestamp with time zone' })
-  registeredAt: Date;
+  registered_at: Date;
 
   @Column()
   status: string; // 'PRESENTE', 'RETRASO', etc.
+
+  // Timestamps para la sincronización
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  created_at: Date;
+
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updated_at: Date;
 
   // Relaciones
   @ManyToOne(() => AttendanceListEntity, list => list.records, { onDelete: 'CASCADE' })

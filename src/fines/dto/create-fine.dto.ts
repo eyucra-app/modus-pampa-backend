@@ -22,5 +22,5 @@ export class CreateFineDto {
 
   @IsUUID()
   @IsNotEmpty()
-  affiliateId: string; // El UUID del afiliado al que pertenece la multa
+  affiliate_uuid: string; // El UUID del afiliado al que pertenece la multa
 }

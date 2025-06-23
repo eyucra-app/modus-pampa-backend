@@ -21,10 +21,10 @@ export class FineEntity {
 
   // Relación: Muchas multas pueden pertenecer a un afiliado.
   @Column()
-  affiliateId: string; // Almacenamos el UUID del afiliado
+  affiliate_uuid: string; // Almacenamos el UUID del afiliado
 
   @ManyToOne(() => AffiliateEntity, { onDelete: 'CASCADE' }) // Si se borra el afiliado, se borran sus multas
-  @JoinColumn({ name: 'affiliateId' }) // La columna que establece la relación
+  @JoinColumn({ name: 'affiliate_uuid' }) // La columna que establece la relación
   affiliate: AffiliateEntity;
     
   // Columnas para sincronización

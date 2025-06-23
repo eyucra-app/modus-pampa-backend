@@ -42,7 +42,7 @@ export class AttendanceService {
           return transactionalEntityManager.create(AttendanceRecordEntity, {
             ...recordDto,
             listId: list.id,
-            registeredAt: new Date(recordDto.registeredAt),
+            registeredAt: new Date(recordDto.registered_at),
           });
         });
         await transactionalEntityManager.save(recordEntities);
