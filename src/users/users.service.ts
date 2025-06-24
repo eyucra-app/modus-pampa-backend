@@ -49,8 +49,8 @@ export class UsersService {
   async validateUser(user_name: string, pass: string): Promise<any> {
     const user = await this.usersRepository.findOneBy({ user_name });
     // const passwordMatches = await bcrypt.compare(pass, user.password);
-    if (user && user.password === pass) { // Reemplazar con la comparación de hash
-      const { password, ...result } = user;
+    if (user && user.password_hash === pass) { // Reemplazar con la comparación de hash
+      const { password_hash, ...result } = user;
       return result;
     }
     return null;

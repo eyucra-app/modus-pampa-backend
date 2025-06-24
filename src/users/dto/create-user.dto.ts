@@ -11,7 +11,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password_hash: string;
 
   @IsEmail() // Validación para formato de email
   @IsNotEmpty()

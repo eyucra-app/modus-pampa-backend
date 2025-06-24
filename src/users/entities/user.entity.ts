@@ -9,7 +9,7 @@ export class UserEntity {
   user_name: string;
 
   @Column()
-  password: string;
+  password_hash: string;
 
   @Column({ unique: true }) // Generalmente el correo también es único
   email: string; // Nueva columna para el correo
