@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, IsNumber, IsDateString, IsPositive } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsNumber, IsDateString, IsPositive, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateFineDto {
   @IsUUID()
@@ -16,9 +16,9 @@ export class CreateFineDto {
   @IsDateString()
   date: string;
 
-  @IsString()
-  @IsNotEmpty()
-  status: string;
+  @IsBoolean() 
+  @IsOptional()
+  is_paid?: boolean;
 
   @IsUUID()
   @IsNotEmpty()

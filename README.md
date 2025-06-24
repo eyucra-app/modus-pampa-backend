@@ -75,6 +75,16 @@ El comando que ejecutarás en tu terminal **local** cada vez que necesites crear
 
 El comando completo y recomendado es:
 
+Antes de generar la migración, ejecuta el siguiente comando en tu terminal. Este comando borrará la carpeta `dist` antigua y creará una nueva con la versión más reciente de tu código.
+
+```bash
+yarn build
+```
+
+*(Este comando está definido en los `scripts` de tu `package.json` y usualmente ejecuta `nest build`)*.
+
+
+
 ```bash
 yarn typeorm migration:generate src/db/migrations/NombreDescriptivoDelCambio
 ```

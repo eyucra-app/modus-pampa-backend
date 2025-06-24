@@ -16,8 +16,8 @@ export class FineEntity {
   @Column({ type: 'timestamp' })
   date: Date;
 
-  @Column()
-  status: string; // Ej: 'pending', 'paid'
+  @Column({ type: 'boolean', default: false }) 
+  is_paid: boolean;
 
   // Relación: Muchas multas pueden pertenecer a un afiliado.
   @Column()
