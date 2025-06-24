@@ -4,6 +4,7 @@ import { Repository, EntityManager } from 'typeorm';
 import { ContributionEntity } from './entities/contribution.entity';
 import { ContributionAffiliateLinkEntity } from './entities/contribution-affiliate-link.entity';
 import { CreateContributionDto } from './dto/create-contribution.dto';
+import { UpdateContributionLinkDto } from './dto/update-contribution-link.dto';
 
 @Injectable()
 export class ContributionsService {
@@ -51,6 +52,18 @@ export class ContributionsService {
           relations: ['links', 'links.affiliate'] 
       });
     });
+  }
+
+  async updateLink(updateLinkDto: UpdateContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
+    const { contribution_id, affiliate_uuid, ...updateData } = updateLinkDto;
+
+    const link = await this.entityManager.findOneByOrFail(ContributionAffiliateLinkEntity, {
+      contributionId: contribution_id,
+      affiliate_uuid: affiliate_uuid,
+    });
+
+    this.entityManager.merge(ContributionAffiliateLinkEntity, link, updateData);
+    return this.entityManager.save(link);
   }
 
   // Los otros métodos (findAll, findOne, remove) también deben usar 'links'

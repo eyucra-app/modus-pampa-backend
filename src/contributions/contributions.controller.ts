@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Get, Param, Delete, ParseIntPipe, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, ParseIntPipe, Patch, Put, HttpCode, HttpStatus } from '@nestjs/common';
 import { ContributionsService } from './contributions.service';
 import { CreateContributionDto } from './dto/create-contribution.dto';
+import { UpdateContributionLinkDto } from './dto/update-contribution-link.dto';
 
 @Controller('api/contributions')
 export class ContributionsController {
@@ -17,6 +18,12 @@ export class ContributionsController {
     @Body() createContributionDto: CreateContributionDto
   ) {
     return this.contributionsService.upsert(createContributionDto, id);
+  }
+
+  @Put('link') // Responderá a PUT /api/contributions/link
+  @HttpCode(HttpStatus.OK)
+  updateContributionLink(@Body() updateLinkDto: UpdateContributionLinkDto) {
+    return this.contributionsService.updateLink(updateLinkDto);
   }
 
   @Get()
