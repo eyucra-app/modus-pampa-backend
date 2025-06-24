@@ -65,7 +65,7 @@ export class ContributionsService {
 
     // 2. Ahora, buscar el enlace usando el ID numérico del padre
     const link = await this.entityManager.findOneByOrFail(ContributionAffiliateLinkEntity, {
-      contributionId: parentContribution.id,
+      contribution_uuid: parentContribution.uuid,
       affiliate_uuid: affiliate_uuid,
     });
 
@@ -81,7 +81,7 @@ export class ContributionsService {
   async findOne(id: number): Promise<ContributionEntity> {
     const contribution = await this.contributionsRepository.findOne({
       where: { id },
-      relations: ['links', 'links.affiliate'], // <<<--- CORRECCIÓN AQUÍ
+      relations: ['links', 'links.affiliate'],
     });
     if (!contribution) {
       throw new NotFoundException(`Contribución con ID ${id} no encontrada.`);
