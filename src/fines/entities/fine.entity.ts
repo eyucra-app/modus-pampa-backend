@@ -19,6 +19,9 @@ export class FineEntity {
   @Column({ type: 'boolean', default: false }) 
   is_paid: boolean;
 
+  @Column({ default: 'Varios' })
+  category: string;
+
   // Relación: Muchas multas pueden pertenecer a un afiliado.
   @Column()
   affiliate_uuid: string; // Almacenamos el UUID del afiliado

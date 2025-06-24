@@ -20,6 +20,10 @@ export class CreateFineDto {
   @IsOptional()
   is_paid?: boolean;
 
+  @IsString()
+  @IsNotEmpty()
+  category: string;
+
   @IsUUID()
   @IsNotEmpty()
   affiliate_uuid: string; // El UUID del afiliado al que pertenece la multa
