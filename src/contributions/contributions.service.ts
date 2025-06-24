@@ -55,10 +55,17 @@ export class ContributionsService {
   }
 
   async updateLink(updateLinkDto: UpdateContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
-    const { contribution_id, affiliate_uuid, ...updateData } = updateLinkDto;
+    const { contribution_uuid, affiliate_uuid, ...updateData } = updateLinkDto;
 
+    // 1. Encontrar el aporte padre por su UUID para obtener su ID numérico
+    const parentContribution = await this.contributionsRepository.findOneBy({ uuid: contribution_uuid });
+    if (!parentContribution) {
+      throw new NotFoundException(`Aporte con UUID ${contribution_uuid} no encontrado.`);
+    }
+
+    // 2. Ahora, buscar el enlace usando el ID numérico del padre
     const link = await this.entityManager.findOneByOrFail(ContributionAffiliateLinkEntity, {
-      contributionId: contribution_id,
+      contributionId: parentContribution.id,
       affiliate_uuid: affiliate_uuid,
     });
 
