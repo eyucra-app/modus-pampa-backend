@@ -33,8 +33,8 @@ export class AffiliateEntity {
   @Column({ nullable: true })
   credential_photo_url?: string;
 
-  @Column('simple-array') // TypeORM puede manejar arrays de strings
-  tags: string[];
+  @Column({ type: 'text', default: '[]' }) 
+  tags: string;
 
   @Column('float', { default: 0.0 })
   total_paid: number;

@@ -44,10 +44,9 @@ export class CreateAffiliateDto {
   @IsOptional()
   credential_photo_url?: string;
 
-  @IsArray()
-  @IsString({ each: true }) // Valida que cada elemento del array sea un string
+  @IsString()
   @IsOptional()
-  tags?: string[];
+  tags?: string;
 
   @IsNumber()
   @IsOptional()
