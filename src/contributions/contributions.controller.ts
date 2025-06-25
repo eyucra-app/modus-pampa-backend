@@ -8,19 +8,22 @@ export class ContributionsController {
   constructor(private readonly contributionsService: ContributionsService) {}
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   create(@Body() createContributionDto: CreateContributionDto) {
     return this.contributionsService.upsert(createContributionDto);
   }
   
-  @Patch(':id')
+  // Este endpoint ahora usa UUID
+  @Patch(':uuid')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('uuid') uuid: string,
     @Body() createContributionDto: CreateContributionDto
   ) {
-    return this.contributionsService.upsert(createContributionDto, id);
+    // La lógica de upsert ya maneja la creación/actualización por UUID
+    return this.contributionsService.upsert(createContributionDto);
   }
 
-  @Put('link') // Responderá a PUT /api/contributions/link
+  @Put('link')
   @HttpCode(HttpStatus.OK)
   updateContributionLink(@Body() updateLinkDto: UpdateContributionLinkDto) {
     return this.contributionsService.updateLink(updateLinkDto);
@@ -31,13 +34,16 @@ export class ContributionsController {
     return this.contributionsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.contributionsService.findOne(id);
+  // Este endpoint ahora usa UUID
+  @Get(':uuid')
+  findOne(@Param('uuid') uuid: string) {
+    return this.contributionsService.findOne(uuid);
   }
 
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.contributionsService.remove(id);
+  // Este endpoint ahora usa UUID
+  @Delete(':uuid')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('uuid') uuid: string) {
+    return this.contributionsService.remove(uuid);
   }
 }

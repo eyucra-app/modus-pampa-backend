@@ -11,88 +11,87 @@ export class ContributionsService {
   constructor(
     @InjectRepository(ContributionEntity)
     private readonly contributionsRepository: Repository<ContributionEntity>,
+    @InjectRepository(ContributionAffiliateLinkEntity)
+    private readonly linksRepository: Repository<ContributionAffiliateLinkEntity>,
     private readonly entityManager: EntityManager,
   ) {}
 
-  async upsert(createDto: CreateContributionDto, id?: number): Promise<ContributionEntity> {
-    return this.entityManager.transaction(async transactionalEntityManager => {
-      const { links, ...mainData } = createDto;
-      
-      const contributionData = {
-          ...mainData,
-          date: new Date(mainData.date),
-      };
-      
-      if (id) {
-        await transactionalEntityManager.update(ContributionEntity, id, contributionData);
-      }
-      
-      const contribution = id 
-        ? await transactionalEntityManager.findOneByOrFail(ContributionEntity, { id })
-        : await transactionalEntityManager.save(ContributionEntity, contributionData);
+  async upsert(createDto: CreateContributionDto): Promise<ContributionEntity> {
+    const { links, ...mainData } = createDto;
 
-      if (id) {
-        await transactionalEntityManager.delete(ContributionAffiliateLinkEntity, { contributionId: id });
-      }
+    // Buscamos si ya existe una contribución con ese UUID
+    let contribution = await this.contributionsRepository.findOneBy({ uuid: mainData.uuid });
 
-      if (links && links.length > 0) {
-        const linkEntities = links.map(linkDto => {
-          return transactionalEntityManager.create(ContributionAffiliateLinkEntity, {
-            ...linkDto,
-            contributionId: contribution.id,
-          });
-        });
-        await transactionalEntityManager.save(linkEntities);
-      }
-      
-      // Devolver la entidad completa con sus relaciones
-      return transactionalEntityManager.findOne(ContributionEntity, {
-          where: { id: contribution.id },
-          // <<<--- CORRECCIÓN AQUÍ: 'details' cambiado a 'links'
-          relations: ['links', 'links.affiliate'] 
+    // Si existe, la actualizamos. Si no, creamos una nueva.
+    if (contribution) {
+      contribution = this.contributionsRepository.merge(contribution, {
+        ...mainData,
+        date: new Date(mainData.date),
       });
-    });
+    } else {
+      contribution = this.contributionsRepository.create({
+        ...mainData,
+        date: new Date(mainData.date),
+      });
+    }
+
+    // Guardamos la entidad padre
+    const savedContribution = await this.contributionsRepository.save(contribution);
+
+    // Borramos los enlaces antiguos para este aporte para asegurar consistencia
+    await this.linksRepository.delete({ contribution_uuid: savedContribution.uuid });
+
+    // Creamos y guardamos los nuevos enlaces
+    if (links && links.length > 0) {
+      const linkEntities = links.map(linkDto => {
+        return this.linksRepository.create({
+          ...linkDto,
+          contribution_uuid: savedContribution.uuid, // Usamos el UUID del padre
+        });
+      });
+      await this.linksRepository.save(linkEntities);
+    }
+
+    // Devolvemos la entidad completa con sus relaciones cargadas
+    return this.findOne(savedContribution.uuid);
   }
 
   async updateLink(updateLinkDto: UpdateContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
     const { contribution_uuid, affiliate_uuid, ...updateData } = updateLinkDto;
-
-    // 1. Encontrar el aporte padre por su UUID para obtener su ID numérico
-    const parentContribution = await this.contributionsRepository.findOneBy({ uuid: contribution_uuid });
-    if (!parentContribution) {
-      throw new NotFoundException(`Aporte con UUID ${contribution_uuid} no encontrado.`);
-    }
-
-    // 2. Ahora, buscar el enlace usando el ID numérico del padre
-    const link = await this.entityManager.findOneByOrFail(ContributionAffiliateLinkEntity, {
-      contribution_uuid: parentContribution.uuid,
-      affiliate_uuid: affiliate_uuid,
+    
+    // El método `preload` busca la entidad por su clave y fusiona los nuevos datos
+    const link = await this.linksRepository.preload({
+      contribution_uuid,
+      affiliate_uuid,
+      ...updateData,
     });
 
-    this.entityManager.merge(ContributionAffiliateLinkEntity, link, updateData);
-    return this.entityManager.save(link);
+    if (!link) {
+      throw new NotFoundException(`Enlace de aporte no encontrado para el afiliado ${affiliate_uuid}`);
+    }
+
+    return this.linksRepository.save(link);
   }
 
-  // Los otros métodos (findAll, findOne, remove) también deben usar 'links'
   findAll(): Promise<ContributionEntity[]> {
     return this.contributionsRepository.find({ relations: ['links'] });
   }
 
-  async findOne(id: number): Promise<ContributionEntity> {
+  async findOne(uuid: string): Promise<ContributionEntity> {
     const contribution = await this.contributionsRepository.findOne({
-      where: { id },
+      where: { uuid },
       relations: ['links', 'links.affiliate'],
     });
     if (!contribution) {
-      throw new NotFoundException(`Contribución con ID ${id} no encontrada.`);
+      throw new NotFoundException(`Aporte con UUID ${uuid} no encontrado.`);
     }
     return contribution;
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.contributionsRepository.delete(id);
+  async remove(uuid: string): Promise<void> {
+    const result = await this.contributionsRepository.delete({ uuid });
     if (result.affected === 0) {
-      throw new NotFoundException(`Contribución con ID ${id} no encontrada.`);
+      throw new NotFoundException(`Aporte con UUID ${uuid} no encontrado.`);
     }
   }
 }
