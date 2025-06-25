@@ -4,9 +4,6 @@ import { ContributionAffiliateLinkEntity } from './contribution-affiliate-link.e
 @Entity({ name: 'contributions' }) // Coincide con la tabla 'contributions'
 export class ContributionEntity {
   @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ unique: true })
   uuid: string;
 
   @Column()
