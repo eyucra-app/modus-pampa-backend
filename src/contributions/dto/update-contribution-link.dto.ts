@@ -2,6 +2,11 @@
 import { IsNotEmpty, IsNumber, IsBoolean, IsInt, IsUUID } from 'class-validator';
 
 export class UpdateContributionLinkDto {
+
+  @IsUUID()
+  @IsNotEmpty()
+  uuid: string;
+
   @IsUUID()
   @IsNotEmpty()
   contribution_uuid: string;

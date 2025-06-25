@@ -1,6 +1,11 @@
-import { IsUUID, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsUUID, IsNumber, IsBoolean, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class ContributionAffiliateLinkDto {
+
+  @IsUUID()
+  @IsNotEmpty()
+  uuid: string;
+
   @IsUUID()
   affiliate_uuid: string;
 
