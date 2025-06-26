@@ -57,19 +57,23 @@ export class ContributionsService {
   }
 
   async updateLink(updateLinkDto: UpdateContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
-    const { contribution_uuid, affiliate_uuid, ...updateData } = updateLinkDto;
-    
-    const link = await this.linksRepository.preload({
-      contribution_uuid,
-      affiliate_uuid,
-      ...updateData,
-    });
+    // 1. Extraemos el UUID (la clave primaria) del DTO. El resto son los datos a actualizar.
+    const { uuid, ...updateData } = updateLinkDto;
 
+    // 2. Buscamos la entidad existente en la base de datos usando su clave primaria.
+    const link = await this.linksRepository.findOneBy({ uuid });
+
+    // 3. Si no se encuentra, lanzamos un error claro.
     if (!link) {
-      throw new NotFoundException(`Enlace de aporte no encontrado para el afiliado ${affiliate_uuid}`);
+      throw new NotFoundException(`Enlace de aporte con UUID '${uuid}' no encontrado.`);
     }
 
-    return this.linksRepository.save(link);
+    // 4. Fusionamos la entidad encontrada con los nuevos datos.
+    // TypeORM se encarga de actualizar solo los campos que vienen en updateData.
+    const updatedLink = this.linksRepository.merge(link, updateData);
+
+    // 5. Guardamos la entidad actualizada.
+    return this.linksRepository.save(updatedLink);
   }
 
   findAll(): Promise<ContributionEntity[]> {
