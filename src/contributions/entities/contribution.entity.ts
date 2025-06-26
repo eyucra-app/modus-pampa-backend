@@ -3,7 +3,7 @@ import { ContributionAffiliateLinkEntity } from './contribution-affiliate-link.e
 
 @Entity({ name: 'contributions' }) // Coincide con la tabla 'contributions'
 export class ContributionEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
   @Column()
