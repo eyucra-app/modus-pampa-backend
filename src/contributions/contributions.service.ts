@@ -76,6 +76,19 @@ export class ContributionsService {
     return this.linksRepository.save(updatedLink);
   }
 
+  async update_Link(uuid: string, updateLinkDto: UpdateContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
+    const link = await this.linksRepository.findOneBy({ uuid });
+
+    if (!link) {
+      throw new NotFoundException(`Enlace de aporte con UUID '${uuid}' no encontrado.`);
+    }
+
+    // Merge funciona perfectamente con DTOs que tienen campos opcionales.
+    const updatedLink = this.linksRepository.merge(link, updateLinkDto);
+
+    return this.linksRepository.save(updatedLink);
+  }
+
   findAll(): Promise<ContributionEntity[]> {
     return this.contributionsRepository.find({ relations: ['links'] });
   }

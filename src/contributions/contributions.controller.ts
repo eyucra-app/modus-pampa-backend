@@ -29,6 +29,16 @@ export class ContributionsController {
     return this.contributionsService.updateLink(updateLinkDto);
   }
 
+  @Patch('link/:uuid') // Usar PATCH para actualizaciones parciales y recibir el UUID por la URL
+  update_Link(
+    @Param('uuid') uuid: string,
+    @Body() updateLinkDto: UpdateContributionLinkDto
+  ) {
+    // La lógica del servicio que implementamos antes ya no necesita que le pases el UUID
+    // dos veces. Se lo pasamos como un parámetro separado.
+    return this.contributionsService.update_Link(uuid, updateLinkDto);
+  }
+
   @Get()
   findAll() {
     return this.contributionsService.findAll();
