@@ -13,53 +13,52 @@ export class ContributionsService {
     private readonly contributionsRepository: Repository<ContributionEntity>,
     @InjectRepository(ContributionAffiliateLinkEntity)
     private readonly linksRepository: Repository<ContributionAffiliateLinkEntity>,
-    private readonly entityManager: EntityManager,
   ) {}
 
+  // --- MÉTODO UPSERT REESCRITO Y CORREGIDO ---
   async upsert(createDto: CreateContributionDto): Promise<ContributionEntity> {
     const { links, ...mainData } = createDto;
 
-    // Buscamos si ya existe una contribución con ese UUID
-    let contribution = await this.contributionsRepository.findOneBy({ uuid: mainData.uuid });
+    // 1. Preparamos el aporte padre. Usamos la lógica de "upsert" de TypeORM.
+    //    'preload' busca por la clave primaria (que es el uuid) y si encuentra
+    //    el registro, fusiona los datos. Si no, devuelve undefined.
+    let contribution = await this.contributionsRepository.preload({
+      ...mainData,
+      date: new Date(mainData.date),
+    });
 
-    // Si existe, la actualizamos. Si no, creamos una nueva.
-    if (contribution) {
-      contribution = this.contributionsRepository.merge(contribution, {
-        ...mainData,
-        date: new Date(mainData.date),
-      });
-    } else {
+    // Si no se encontró (es nuevo), lo creamos.
+    if (!contribution) {
       contribution = this.contributionsRepository.create({
         ...mainData,
         date: new Date(mainData.date),
       });
     }
 
-    // Guardamos la entidad padre
+    // Guardamos la entidad padre para asegurar que existe.
     const savedContribution = await this.contributionsRepository.save(contribution);
 
-    // Borramos los enlaces antiguos para este aporte para asegurar consistencia
+    // 2. Borramos los enlaces antiguos para este aporte para evitar duplicados y asegurar consistencia.
     await this.linksRepository.delete({ contribution_uuid: savedContribution.uuid });
 
-    // Creamos y guardamos los nuevos enlaces
+    // 3. Creamos y guardamos los nuevos enlaces, asegurando que usen el UUID del padre.
     if (links && links.length > 0) {
       const linkEntities = links.map(linkDto => {
         return this.linksRepository.create({
           ...linkDto,
-          contribution_uuid: savedContribution.uuid, // Usamos el UUID del padre
+          contribution_uuid: savedContribution.uuid, // La relación se basa en el UUID
         });
       });
       await this.linksRepository.save(linkEntities);
     }
 
-    // Devolvemos la entidad completa con sus relaciones cargadas
+    // 4. Devolvemos la entidad completa con sus relaciones cargadas.
     return this.findOne(savedContribution.uuid);
   }
 
   async updateLink(updateLinkDto: UpdateContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
     const { contribution_uuid, affiliate_uuid, ...updateData } = updateLinkDto;
     
-    // El método `preload` busca la entidad por su clave y fusiona los nuevos datos
     const link = await this.linksRepository.preload({
       contribution_uuid,
       affiliate_uuid,
