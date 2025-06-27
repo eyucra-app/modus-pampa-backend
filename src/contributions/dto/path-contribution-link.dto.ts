@@ -1,7 +1,10 @@
-// src/contributions/dto/patch-contribution-link.dto.ts
 import { IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 export class PatchContributionLinkDto {
+  @IsNumber()
+  @IsOptional()
+  amount_to_pay?: number;
+
   @IsNumber()
   @IsOptional()
   amount_paid?: number;

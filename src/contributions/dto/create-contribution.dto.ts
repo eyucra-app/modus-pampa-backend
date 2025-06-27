@@ -1,20 +1,24 @@
-import { IsString, IsNotEmpty, IsDateString, IsArray, ValidateNested, IsOptional, IsNumber, IsBoolean, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsArray, ValidateNested, IsNumber, IsBoolean, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ContributionAffiliateLinkDto } from './contribution-affiliate-link.dto';
+
+// DTO para un enlace individual al crear una contribución
+class CreateContributionLinkDto {
+  @IsUUID()
+  uuid: string;
+
+  @IsUUID()
+  affiliate_uuid: string;
+
+  @IsNumber()
+  amount_to_pay: number;
+}
 
 export class CreateContributionDto {
-  
   @IsUUID()
-  @IsNotEmpty()
   uuid: string;
 
   @IsString()
-  @IsNotEmpty()
   name: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
 
   @IsDateString()
   date: string;
@@ -22,13 +26,8 @@ export class CreateContributionDto {
   @IsNumber()
   default_amount: number;
 
-  @IsBoolean()
-  @IsOptional()
-  is_general?: boolean = true;
-
-  // El DTO para la creación/actualización contendrá la lista de enlaces
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ContributionAffiliateLinkDto)
-  links: ContributionAffiliateLinkDto[];
+  @Type(() => CreateContributionLinkDto)
+  links: CreateContributionLinkDto[];
 }
