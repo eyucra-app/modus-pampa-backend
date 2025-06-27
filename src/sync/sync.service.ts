@@ -5,7 +5,7 @@ import { AttendanceListEntity } from 'src/attendance/entities/attendance-list.en
 import { ContributionEntity } from 'src/contributions/entities/contribution.entity';
 import { FineEntity } from 'src/fines/entities/fine.entity';
 import { UserEntity } from 'src/users/entities/user.entity';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class SyncService {
@@ -18,21 +18,29 @@ export class SyncService {
   ) {}
 
   async pullChanges(lastSyncTimestamp?: string) {
-    const queryOptions = lastSyncTimestamp
-      ? { where: { updated_at: MoreThan(new Date(lastSyncTimestamp)) } }
+    const whereCondition: FindOptionsWhere<any> = lastSyncTimestamp
+      ? { updated_at: MoreThan(new Date(lastSyncTimestamp)) }
       : {};
 
-    const fineQueryOptions = { ...queryOptions, relations: ['affiliate'] };
-    const contributionQueryOptions = { ...queryOptions, relations: ['links'] };
-    const attendanceQueryOptions = { ...queryOptions, relations: ['records'] };
-
+    const contributionsQuery = this.contributionsRepo
+      .createQueryBuilder('contribution') // 'contribution' es el alias para ContributionEntity
+      .leftJoinAndSelect('contribution.links', 'link') // Carga la relación 'links' y le da el alias 'link'
+      .leftJoinAndSelect('link.affiliate', 'affiliate') // Opcional: Carga el afiliado dentro de cada link
+      .orderBy('contribution.updated_at', 'DESC');
+    
+    // Si hay un timestamp, se añade la condición 'where' a la consulta
+    if (lastSyncTimestamp) {
+        contributionsQuery.where('contribution.updated_at > :lastSync', { lastSync: new Date(lastSyncTimestamp) });
+    }
     const [affiliates, users, fines, contributions, attendance] = await Promise.all([
-      this.affiliatesRepo.find(queryOptions),
-      this.usersRepo.find(queryOptions),
-      // Usamos las nuevas opciones para la consulta de multas
-      this.finesRepo.find(fineQueryOptions),
-      this.contributionsRepo.find(contributionQueryOptions),
-      this.attendanceRepo.find(attendanceQueryOptions),
+      this.affiliatesRepo.find({ where: whereCondition }),
+      this.usersRepo.find({ where: whereCondition }),
+      this.finesRepo.find({ where: whereCondition, relations: ['affiliate'] }),
+      
+      // Se ejecuta la nueva consulta explícita en lugar del .find()
+      contributionsQuery.getMany(), 
+
+      this.attendanceRepo.find({ where: whereCondition, relations: ['records'] }),
     ]);
 
     return { affiliates, users, fines, contributions, attendance };
