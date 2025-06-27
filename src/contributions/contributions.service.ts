@@ -5,6 +5,7 @@ import { ContributionEntity } from './entities/contribution.entity';
 import { ContributionAffiliateLinkEntity } from './entities/contribution-affiliate-link.entity';
 import { CreateContributionDto } from './dto/create-contribution.dto';
 import { UpdateContributionLinkDto } from './dto/update-contribution-link.dto';
+import { PatchContributionLinkDto } from './dto/path-contribution-link.dto';
 
 @Injectable()
 export class ContributionsService {
@@ -88,6 +89,19 @@ export class ContributionsService {
 
     return this.linksRepository.save(updatedLink);
   }
+
+  async patchLink(uuid: string, patchDto: PatchContributionLinkDto): Promise<ContributionAffiliateLinkEntity> {
+    const link = await this.linksRepository.findOneBy({ uuid });
+
+    if (!link) {
+      throw new NotFoundException(`Enlace de contribución con UUID '${uuid}' no encontrado.`);
+    }
+
+    // 'merge' aplica de forma segura los campos del DTO a la entidad existente.
+    const updatedLink = this.linksRepository.merge(link, patchDto);
+
+    return this.linksRepository.save(updatedLink);
+  } 
 
   findAll(): Promise<ContributionEntity[]> {
     return this.contributionsRepository.find({ relations: ['links'] });

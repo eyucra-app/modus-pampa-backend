@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Param, Delete, ParseIntPipe, Patch, Put, H
 import { ContributionsService } from './contributions.service';
 import { CreateContributionDto } from './dto/create-contribution.dto';
 import { UpdateContributionLinkDto } from './dto/update-contribution-link.dto';
+import { PatchContributionLinkDto } from './dto/path-contribution-link.dto';
 
 @Controller('api/contributions')
 export class ContributionsController {
@@ -38,6 +39,14 @@ export class ContributionsController {
     // dos veces. Se lo pasamos como un parámetro separado.
     return this.contributionsService.update_Link(uuid, updateLinkDto);
   }
+
+  @Patch('link/:uuid') // Nuevo endpoint: PATCH /api/contributions/link/:uuid
+  patchLink(
+    @Param('uuid') uuid: string,
+    @Body() patchDto: PatchContributionLinkDto,
+  ) {
+    return this.contributionsService.patchLink(uuid, patchDto);
+  } 
 
   @Get()
   findAll() {
