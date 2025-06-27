@@ -3,7 +3,7 @@ import { ContributionsService } from './contributions.service';
 import { CreateContributionDto } from './dto/create-contribution.dto';
 import { PatchContributionLinkDto } from './dto/path-contribution-link.dto';
 
-@Controller('contributions') // Ruta base: /api/contributions
+@Controller('api/contributions') // Ruta base: /api/contributions
 export class ContributionsController {
   constructor(private readonly contributionsService: ContributionsService) {}
 
