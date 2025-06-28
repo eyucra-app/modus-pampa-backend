@@ -27,4 +27,8 @@ export class CreateFineDto {
   @IsUUID()
   @IsNotEmpty()
   affiliate_uuid: string; // El UUID del afiliado al que pertenece la multa
+  
+  @IsUUID()
+  @IsOptional() // Hacemos que el campo sea opcional en las peticiones
+  related_attendance_uuid?: string;
 }

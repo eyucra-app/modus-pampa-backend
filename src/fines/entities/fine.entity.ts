@@ -22,6 +22,10 @@ export class FineEntity {
   @Column({ default: 'Varios' })
   category: string;
 
+  // Columna para el UUID de la lista de asistencia relacionada
+  @Column({ name: 'related_attendance_uuid', type: 'uuid', nullable: true })
+  related_attendance_uuid: string | null;
+
   // Relación: Muchas multas pueden pertenecer a un afiliado.
   @Column()
   affiliate_uuid: string; // Almacenamos el UUID del afiliado
