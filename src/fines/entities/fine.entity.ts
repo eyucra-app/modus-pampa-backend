@@ -13,7 +13,7 @@ export class FineEntity {
   @Column('float')
   amount: number;
 
-  @Column('float')
+  @Column('float', { nullable: true})
   amount_paid: number;
 
   @Column({ type: 'timestamp' })

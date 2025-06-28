@@ -1,0 +1,14 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class AddAmountPaidNullableFine1751126722298 implements MigrationInterface {
+    name = 'AddAmountPaidNullableFine1751126722298'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "fines" ADD "amount_paid" double precision`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "fines" DROP COLUMN "amount_paid"`);
+    }
+
+}
