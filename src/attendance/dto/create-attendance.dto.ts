@@ -1,23 +1,41 @@
-import { IsString, IsNotEmpty, IsDateString, IsArray, ValidateNested } from 'class-validator';
+// src/attendance/dto/create-attendance.dto.ts
+import { IsString, IsNotEmpty, IsDateString, IsArray, ValidateNested, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AttendanceRecordDto } from './attendance-record.dto';
 
-export class CreateAttendanceDto {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+// DTO para un registro individual
+class RecordDto {
+  @IsUUID()
+  uuid: string;
 
-  @IsDateString()
-  @IsNotEmpty()
-  created_at: string;
+  @IsUUID()
+  affiliate_uuid: string;
 
   @IsString()
-  @IsNotEmpty()
   status: string;
 
-  // Array de registros de asistencia anidados
+  @IsDateString()
+  registered_at: string;
+}
+
+// DTO para el paquete completo de la lista
+export class CreateAttendanceDto {
+  @IsUUID()
+  uuid: string;
+
+  @IsString()
+  name: string;
+
+  @IsString()
+  status: string;
+  
+  @IsDateString()
+  created_at: string;
+  
+  @IsDateString()
+  updated_at: string;
+
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => AttendanceRecordDto)
-  records: AttendanceRecordDto[];
+  @Type(() => RecordDto)
+  records: RecordDto[];
 }

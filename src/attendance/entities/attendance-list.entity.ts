@@ -1,10 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from 'typeorm';
 import { AttendanceRecordEntity } from './attendance-record.entity';
 
 @Entity({ name: 'attendance_lists' })
 export class AttendanceListEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn('uuid')
+  uuid: string;
 
   @Column()
   name: string;
