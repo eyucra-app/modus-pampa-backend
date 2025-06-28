@@ -16,7 +16,7 @@ export class CreateFineDto {
   @IsNumber()
   @IsPositive()
   @IsOptional()
-  amount_paid: number;
+  amount_paid?: number;
 
   @IsDateString()
   date: string;

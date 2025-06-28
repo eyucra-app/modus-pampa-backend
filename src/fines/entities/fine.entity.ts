@@ -14,7 +14,7 @@ export class FineEntity {
   amount: number;
 
   @Column('float', { nullable: true})
-  amount_paid: number;
+  amount_paid?: number;
 
   @Column({ type: 'timestamp' })
   date: Date;
