@@ -13,6 +13,9 @@ export class FineEntity {
   @Column('float')
   amount: number;
 
+  @Column({ name: 'amount_paid', type: 'float', default: 0.0 })
+  amount_paid: number;
+
   @Column({ type: 'timestamp' })
   date: Date;
 

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, IsNumber, IsDateString, IsPositive, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsNumber, IsDateString, IsPositive, IsBoolean, IsOptional, Min } from 'class-validator';
 
 export class CreateFineDto {
   @IsUUID()
@@ -14,9 +14,9 @@ export class CreateFineDto {
   amount: number;
 
   @IsNumber()
-  @IsPositive()
-  @IsOptional()
-  amount_paido?: number;
+  @Min(0) // El monto pagado no puede ser negativo
+  @IsOptional() // Es opcional, ya que al crear la multa suele ser 0
+  amount_paid?: number;
 
   @IsDateString()
   date: string;
