@@ -4,28 +4,32 @@ import { Repository } from 'typeorm';
 import { Configuration } from './entities/configuration.entity';
 import { CreateConfigurationDto } from './dto/create-configuration.dto';
 import { UpdateConfigurationDto } from './dto/update-configuration.dto';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class ConfigurationService {
   constructor(
     @InjectRepository(Configuration)
     private readonly configurationRepository: Repository<Configuration>,
+    private readonly eventsGateway: EventsGateway, 
   ) {}
 
   async update(updateDto: UpdateConfigurationDto): Promise<Configuration> {
     // La configuración siempre tiene id = 1
-    const config = await this.configurationRepository.preload({
-      id: 1,
-      ...updateDto,
-    });
+    const configToPreload = { id: 1, ...updateDto };
+    let config = await this.configurationRepository.preload(configToPreload);
 
     if (!config) {
-        // si no existe, se crea una nueva
-        const newConfig = this.configurationRepository.create({id: 1, ...updateDto});
-        return this.configurationRepository.save(newConfig);
+        config = this.configurationRepository.create(configToPreload);
     }
     
-    return this.configurationRepository.save(config);
+    const savedConfig = await this.configurationRepository.save(config);
+
+    this.eventsGateway.emitChange('configurationChanged', {
+      message: 'La configuración ha sido actualizada.',
+    });
+
+    return savedConfig;
   }
 
   async findOne(): Promise<Configuration> {

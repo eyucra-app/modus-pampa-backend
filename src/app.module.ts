@@ -11,6 +11,7 @@ import { FinesModule } from './fines/fines.module';
 import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
 import { ConfigurationModule } from './configuration/configuration.module';
+import { EventsModule } from './events/events.module';
 
 
 @Module({
@@ -64,6 +65,7 @@ import { ConfigurationModule } from './configuration/configuration.module';
     AttendanceModule,
     SyncModule,
     ConfigurationModule,
+    EventsModule,
 
   ],
   controllers: [AppController],

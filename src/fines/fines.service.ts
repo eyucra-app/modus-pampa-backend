@@ -4,36 +4,49 @@ import { Repository } from 'typeorm';
 import { FineEntity } from './entities/fine.entity';
 import { CreateFineDto } from './dto/create-fine.dto';
 import { UpdateFineDto } from './dto/update-fine.dto';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class FinesService {
   constructor(
     @InjectRepository(FineEntity)
     private readonly finesRepository: Repository<FineEntity>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async upsert(fineData: CreateFineDto): Promise<FineEntity> {
     const fine = this.finesRepository.create({
         ...fineData,
-        date: new Date(fineData.date) // Convertir string a objeto Date
+        date: new Date(fineData.date)
     });
-    return this.finesRepository.save(fine);
+    const savedFine = await this.finesRepository.save(fine);
+
+    this.eventsGateway.emitChange('finesChanged', {
+      message: `Multa creada/actualizada: ${savedFine.uuid}`,
+      uuid: savedFine.uuid
+    });
+
+    return savedFine;
   }
 
   async update(uuid: string, updateData: UpdateFineDto): Promise<FineEntity> {
-    // Usamos preload para buscar la multa y fusionar los nuevos datos
     const fine = await this.finesRepository.preload({
       uuid: uuid,
       ...updateData,
-      // Si la fecha se envía en la actualización, también la convertimos
       ...(updateData.date && { date: new Date(updateData.date) }),
     });
 
     if (!fine) {
       throw new NotFoundException(`Multa con UUID '${uuid}' no encontrada.`);
     }
-    // Guardamos la entidad ya actualizada
-    return this.finesRepository.save(fine);
+    const updatedFine = await this.finesRepository.save(fine);
+
+    this.eventsGateway.emitChange('finesChanged', {
+      message: `Multa actualizada: ${updatedFine.uuid}`,
+      uuid: updatedFine.uuid
+    });
+
+    return updatedFine;
   }
 
   async remove(uuid: string): Promise<void> {
@@ -41,6 +54,11 @@ export class FinesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Multa con UUID '${uuid}' no encontrada.`);
     }
+
+    this.eventsGateway.emitChange('finesChanged', {
+      message: `Multa eliminada: ${uuid}`,
+      uuid: uuid
+    });
   }
 
   findAll(): Promise<FineEntity[]> {

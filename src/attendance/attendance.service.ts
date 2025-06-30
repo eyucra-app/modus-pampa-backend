@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { AttendanceListEntity } from './entities/attendance-list.entity';
 import { AttendanceRecordEntity } from './entities/attendance-record.entity';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class AttendanceService {
@@ -13,22 +14,20 @@ export class AttendanceService {
     private readonly listsRepository: Repository<AttendanceListEntity>,
     @InjectRepository(AttendanceRecordEntity)
     private readonly recordsRepository: Repository<AttendanceRecordEntity>,
+    private readonly eventsGateway: EventsGateway, 
   ) {}
 
   async upsertListWithRecords(dto: CreateAttendanceDto): Promise<AttendanceListEntity> {
     const { records, ...listData } = dto;
     
-    // 1. Guarda o actualiza la lista principal
     const savedList = await this.listsRepository.save({
       ...listData,
       created_at: new Date(listData.created_at),
       updated_at: new Date(listData.updated_at),
     });
 
-    // 2. Borra los registros antiguos para esta lista para evitar duplicados
     await this.recordsRepository.delete({ list_uuid: savedList.uuid });
 
-    // 3. Crea y guarda los nuevos registros
     if (records && records.length > 0) {
       const recordEntities = records.map(recordDto => this.recordsRepository.create({
         ...recordDto,
@@ -38,6 +37,11 @@ export class AttendanceService {
       await this.recordsRepository.save(recordEntities);
     }
     
+    this.eventsGateway.emitChange('attendanceChanged', {
+        message: `Lista de asistencia actualizada: ${savedList.uuid}`,
+        uuid: savedList.uuid
+    });
+
     return this.listsRepository.findOne({
       where: { uuid: savedList.uuid },
       relations: ['records'],
@@ -53,5 +57,10 @@ export class AttendanceService {
     if (result.affected === 0) {
       throw new NotFoundException(`Lista de asistencia con UUID ${uuid} no encontrada.`);
     }
+
+    this.eventsGateway.emitChange('attendanceChanged', {
+        message: `Lista de asistencia eliminada: ${uuid}`,
+        uuid: uuid
+    });
   }
 }

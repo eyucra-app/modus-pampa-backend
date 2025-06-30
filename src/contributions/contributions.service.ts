@@ -5,6 +5,7 @@ import { ContributionEntity } from './entities/contribution.entity';
 import { ContributionAffiliateLinkEntity } from './entities/contribution-affiliate-link.entity';
 import { CreateContributionDto } from './dto/create-contribution.dto';
 import { PatchContributionLinkDto } from './dto/path-contribution-link.dto';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class ContributionsService {
@@ -13,6 +14,7 @@ export class ContributionsService {
     private readonly contributionsRepository: Repository<ContributionEntity>,
     @InjectRepository(ContributionAffiliateLinkEntity)
     private readonly linksRepository: Repository<ContributionAffiliateLinkEntity>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   // Crea una contribución y sus enlaces iniciales
@@ -30,6 +32,11 @@ export class ContributionsService {
       contribution_uuid: savedContribution.uuid,
     }));
     await this.linksRepository.save(linkEntities);
+
+    this.eventsGateway.emitChange('contributionsChanged', {
+      message: `Contribución creada: ${savedContribution.uuid}`,
+      uuid: savedContribution.uuid
+    });
 
     return this.findOne(savedContribution.uuid);
   }
@@ -61,7 +68,14 @@ export class ContributionsService {
     }
 
     const updatedLink = this.linksRepository.merge(link, dto);
-    return this.linksRepository.save(updatedLink);
+    const savedLink = await this.linksRepository.save(updatedLink);
+
+    this.eventsGateway.emitChange('contributionsChanged', {
+      message: `Enlace de contribución actualizado: ${savedLink.uuid}`,
+      uuid: savedLink.contribution_uuid // Notificamos sobre la contribución padre
+    });
+    
+    return savedLink;
   }
 
   // Elimina una contribución
@@ -70,5 +84,10 @@ export class ContributionsService {
     if (result.affected === 0) {
       throw new NotFoundException(`Contribución con UUID ${uuid} no encontrada.`);
     }
+
+    this.eventsGateway.emitChange('contributionsChanged', {
+      message: `Contribución eliminada: ${uuid}`,
+      uuid: uuid
+    });
   }
 }

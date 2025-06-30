@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAffiliateDto } from './dto/create-affiliate.dto';
 import { AffiliateEntity } from './entities/affiliate.entity';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class AffiliatesService {
   constructor(
     @InjectRepository(AffiliateEntity)
     private readonly affiliatesRepository: Repository<AffiliateEntity>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   /**
@@ -22,8 +24,19 @@ export class AffiliatesService {
     // El DTO se mapea directamente a la entidad gracias a que comparten la misma estructura.
     // TypeORM se encarga de crear un nuevo registro si el 'uuid' no existe,
     // o de actualizar el existente si sí lo encuentra.
-    const affiliate = this.affiliatesRepository.create(affiliateData);
-    return this.affiliatesRepository.save(affiliate);
+
+    const affiliateToSave = this.affiliatesRepository.create(affiliateData);
+    // Guardamos la entidad en la base de datos
+    const savedAffiliate = await this.affiliatesRepository.save(affiliateToSave);
+
+    // 3. Emitimos el evento DESPUÉS de guardar y con los datos correctos
+    this.eventsGateway.emitChange('affiliatesChanged', {
+      message: 'La lista de afiliados ha cambiado.',
+      uuid: savedAffiliate.uuid,
+    });
+
+    // Devolvemos la entidad guardada
+    return savedAffiliate;
   }
 
   /**
@@ -38,6 +51,10 @@ export class AffiliatesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Afiliado con UUID '${uuid}' no encontrado.`);
     }
+
+    this.eventsGateway.emitChange('affiliatesChanged', {
+        message: `Afiliado ${uuid} eliminado.`
+    });
   }
 
   /**

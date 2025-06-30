@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { EventsGateway } from 'src/events/events.gateway';
 // En una app real, importarías bcrypt aquí
 // import * as bcrypt from 'bcrypt';
 
@@ -12,6 +13,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    private readonly eventsGateway: EventsGateway, 
   ) {}
 
   async upsert(userData: CreateUserDto): Promise<UserEntity> {
@@ -31,7 +33,14 @@ export class UsersService {
     }
 
     const user = this.usersRepository.create(userData);
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+
+    this.eventsGateway.emitChange('usersChanged', {
+        message: `Usuario creado/actualizado: ${savedUser.uuid}`,
+        uuid: savedUser.uuid
+    });
+
+    return savedUser;
   }
 
   async remove(uuid: string): Promise<void> {
@@ -39,6 +48,11 @@ export class UsersService {
     if (result.affected === 0) {
       throw new NotFoundException(`Usuario con UUID '${uuid}' no encontrado.`);
     }
+    
+    this.eventsGateway.emitChange('usersChanged', {
+        message: `Usuario eliminado: ${uuid}`,
+        uuid: uuid
+    });
   }
 
   findAll(): Promise<UserEntity[]> {
@@ -57,7 +71,6 @@ export class UsersService {
   }
 
   async update(uuid: string, updateData: UpdateUserDto): Promise<UserEntity> {
-    // 1. Buscamos el usuario existente para asegurarnos de que existe.
     const user = await this.usersRepository.preload({
       uuid: uuid,
       ...updateData,
@@ -66,9 +79,14 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`Usuario con UUID '${uuid}' no encontrado.`);
     }
+    const updatedUser = await this.usersRepository.save(user);
 
-    // 2. Guardamos los cambios. TypeORM se encarga de aplicar los campos parciales.
-    return this.usersRepository.save(user);
+    this.eventsGateway.emitChange('usersChanged', {
+        message: `Usuario actualizado: ${updatedUser.uuid}`,
+        uuid: updatedUser.uuid
+    });
+
+    return updatedUser;
   }
 
 }
