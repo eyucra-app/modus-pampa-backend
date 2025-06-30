@@ -12,6 +12,9 @@ export class Configuration {
      @Column('float',{default: 20.0, nullable:true})
      monto_multa_falta?: number
 
+     @Column({nullable: true})
+     backend_url?: string
+
      // Columnas para sincronización
      @CreateDateColumn({ type: 'timestamp with time zone' })
      created_at: Date;

@@ -1,4 +1,4 @@
-import { IsNumber, Min, IsOptional } from "class-validator";
+import { IsNumber, Min, IsOptional, IsString } from "class-validator";
 
 export class CreateConfigurationDto {
 
@@ -12,5 +12,7 @@ export class CreateConfigurationDto {
      @IsOptional() // Es opcional, ya que al crear la multa suele ser 0
      monto_multa_falta?: number;
 
-
+     @IsString()
+     @IsOptional() // Es opcional, ya que al crear la multa suele ser 0
+     backend_url?: string;
 }
