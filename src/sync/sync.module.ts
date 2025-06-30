@@ -7,6 +7,7 @@ import { AttendanceListEntity } from 'src/attendance/entities/attendance-list.en
 import { ContributionEntity } from 'src/contributions/entities/contribution.entity';
 import { FineEntity } from 'src/fines/entities/fine.entity';
 import { UserEntity } from 'src/users/entities/user.entity';
+import { Configuration } from 'src/configuration/entities/configuration.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserEntity } from 'src/users/entities/user.entity';
       FineEntity,
       ContributionEntity,
       AttendanceListEntity,
+      Configuration,
     ]),
   ],
   controllers: [SyncController],

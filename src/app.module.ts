@@ -10,6 +10,7 @@ import { ContributionsModule } from './contributions/contributions.module';
 import { FinesModule } from './fines/fines.module';
 import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
+import { ConfigurationModule } from './configuration/configuration.module';
 
 
 @Module({
@@ -62,6 +63,7 @@ import { UsersModule } from './users/users.module';
     FinesModule,
     AttendanceModule,
     SyncModule,
+    ConfigurationModule,
 
   ],
   controllers: [AppController],
