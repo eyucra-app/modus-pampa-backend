@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CreateAffiliateDto } from './dto/create-affiliate.dto';
 import { AffiliateEntity } from './entities/affiliate.entity';
 import { EventsGateway } from 'src/events/events.gateway';
@@ -21,21 +21,41 @@ export class AffiliatesService {
    * @returns La entidad del afiliado guardada.
    */
   async upsert(affiliateData: CreateAffiliateDto): Promise<AffiliateEntity> {
-    // El DTO se mapea directamente a la entidad gracias a que comparten la misma estructura.
-    // TypeORM se encarga de crear un nuevo registro si el 'uuid' no existe,
-    // o de actualizar el existente si sí lo encuentra.
+    // Extraemos el uuid para diferenciar entre creación y actualización
+    const { uuid, id, ci } = affiliateData;
+
+    // 1. Verificación de ID único en registros activos
+    const existingById = await this.affiliatesRepository.findOne({
+      where: {
+        id: id,
+        deleted_at: IsNull(),
+      },
+    });
+
+    if (existingById && existingById.uuid !== uuid) {
+      throw new ConflictException(`El ID de afiliado '${id}' ya está en uso por otro registro activo.`);
+    }
+
+    // 2. Verificación de CI único en registros activos
+    const existingByCi = await this.affiliatesRepository.findOne({
+      where: {
+        ci: ci,
+        deleted_at: IsNull(),
+      },
+    });
+
+    if (existingByCi && existingByCi.uuid !== uuid) {
+      throw new ConflictException(`El CI '${ci}' ya está en uso por otro registro activo.`);
+    }
 
     const affiliateToSave = this.affiliatesRepository.create(affiliateData);
-    // Guardamos la entidad en la base de datos
     const savedAffiliate = await this.affiliatesRepository.save(affiliateToSave);
 
-    // 3. Emitimos el evento DESPUÉS de guardar y con los datos correctos
     this.eventsGateway.emitChange('affiliatesChanged', {
       message: 'La lista de afiliados ha cambiado.',
       uuid: savedAffiliate.uuid,
     });
 
-    // Devolvemos la entidad guardada
     return savedAffiliate;
   }
 
@@ -65,7 +85,8 @@ export class AffiliatesService {
    * @returns Un array con todas las entidades de afiliados.
    */
   findAll(): Promise<AffiliateEntity[]> {
-    return this.affiliatesRepository.find();
+    // Asegurarse de traer solo los registros no eliminados
+    return this.affiliatesRepository.find({ where: { deleted_at: IsNull() } });
   }
 
   /**
@@ -74,7 +95,9 @@ export class AffiliatesService {
    * @returns La entidad del afiliado si se encuentra.
    */
   async findOne(uuid: string): Promise<AffiliateEntity> {
-    const affiliate = await this.affiliatesRepository.findOneBy({ uuid });
+    const affiliate = await this.affiliatesRepository.findOne({ 
+        where: { uuid, deleted_at: IsNull() } 
+    });
     if (!affiliate) {
       throw new NotFoundException(`Afiliado con UUID '${uuid}' no encontrado.`);
     }

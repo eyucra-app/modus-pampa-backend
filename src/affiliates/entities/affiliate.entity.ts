@@ -6,7 +6,7 @@ export class AffiliateEntity {
   @PrimaryColumn()
   uuid: string;
 
-  @Column({ unique: true })
+  @Column()
   id: string; // ID único como 'AP-001'
 
   @Column()
@@ -15,7 +15,7 @@ export class AffiliateEntity {
   @Column()
   last_name: string;
 
-  @Column({ unique: true })
+  @Column()
   ci: string;
 
   @Column({ nullable: true })
