@@ -26,8 +26,6 @@ export class SyncService {
     const getWhereConditions = (timestamp?: string) => {
       const lastSyncDate = timestamp ? new Date(timestamp) : undefined;
       
-      // --- MODIFICACIÓN CLAVE ---
-      // Se construye el objeto 'where' de forma explícita para evitar errores.
       const updatedWhere: FindOptionsWhere<any> = { deleted_at: IsNull() };
       if (lastSyncDate) {
         updatedWhere.updated_at = MoreThan(lastSyncDate);
@@ -51,6 +49,13 @@ export class SyncService {
         return repo.find({ where, select: ['uuid'], withDeleted: true }).then(items => items.map(i => i.uuid));
     };
 
+    // --- MODIFICACIÓN CLAVE ---
+    // Se crea una condición de búsqueda específica para Configuration que NO incluye 'deleted_at'.
+    const configWhere: FindOptionsWhere<Configuration> = {};
+    if (lastSyncTimestamp) {
+        configWhere.updated_at = MoreThan(new Date(lastSyncTimestamp));
+    }
+
     const [
       affiliatesUpdated, affiliatesDeleted,
       usersUpdated, usersDeleted,
@@ -69,7 +74,8 @@ export class SyncService {
       fetchDeletedUuids(this.contributionsRepo, deletedWhere),
       fetchEntityData(this.attendanceRepo, updatedWhere, { relations: ['records'] }),
       fetchDeletedUuids(this.attendanceRepo, deletedWhere),
-      this.configurationRepo.find({ where: updatedWhere }),
+      // Se utiliza la nueva condición 'configWhere' para la consulta de configuración.
+      this.configurationRepo.find({ where: configWhere }),
     ]);
 
     return {
