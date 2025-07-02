@@ -53,12 +53,20 @@ export class AttendanceService {
   }
 
   async remove(uuid: string): Promise<void> {
-    const result = await this.listsRepository.delete(uuid);
-    if (result.affected === 0) {
+    const list = await this.listsRepository.findOneBy({ uuid });
+    if (!list) {
       throw new NotFoundException(`Lista de asistencia con UUID ${uuid} no encontrada.`);
     }
 
+    // Borrado lógico de la lista. TypeORM no borrará en cascada con soft-delete,
+    // pero nuestra DB si tiene ON DELETE CASCADE, esto podría funcionar.
+    // Si no, necesitaríamos borrar los records primero.
+    const records = await this.recordsRepository.findBy({ list_uuid: uuid });
+    await this.recordsRepository.softRemove(records);
+    await this.listsRepository.softRemove(list);
+
     this.eventsGateway.emitChange('attendanceChanged', {
+        action: 'delete',
         message: `Lista de asistencia eliminada: ${uuid}`,
         uuid: uuid
     });

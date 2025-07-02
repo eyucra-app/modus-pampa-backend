@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -22,4 +22,7 @@ export class UserEntity {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deleted_at: Date;
 }

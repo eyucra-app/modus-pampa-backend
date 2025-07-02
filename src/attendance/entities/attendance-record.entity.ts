@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn, DeleteDateColumn } from 'typeorm';
 import { AttendanceListEntity } from './attendance-list.entity';
 import { AffiliateEntity } from 'src/affiliates/entities/affiliate.entity';
 
@@ -34,4 +34,7 @@ export class AttendanceRecordEntity {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
+  
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deleted_at: Date;
 }

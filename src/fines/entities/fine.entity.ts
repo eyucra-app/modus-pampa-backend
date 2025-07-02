@@ -1,5 +1,5 @@
 import { AffiliateEntity } from 'src/affiliates/entities/affiliate.entity';
-import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 // Importar entidad de afiliado
 
 @Entity({ name: 'fines' })
@@ -43,4 +43,7 @@ export class FineEntity {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deleted_at: Date;
 }

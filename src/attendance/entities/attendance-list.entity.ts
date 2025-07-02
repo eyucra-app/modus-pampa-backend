@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, PrimaryColumn, DeleteDateColumn } from 'typeorm';
 import { AttendanceRecordEntity } from './attendance-record.entity';
 
 @Entity({ name: 'attendance_lists' })
@@ -23,4 +23,7 @@ export class AttendanceListEntity {
   // La fecha de actualización nos sirve para la sincronización
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deleted_at: Date;
 }

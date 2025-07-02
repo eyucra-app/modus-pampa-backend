@@ -45,18 +45,21 @@ export class AffiliatesService {
    * @returns void
    */
   async remove(uuid: string): Promise<void> {
-    const result = await this.affiliatesRepository.delete(uuid);
-
-    // Si `delete` no afecta a ninguna fila, significa que no se encontró el afiliado.
-    if (result.affected === 0) {
+    const affiliate = await this.affiliatesRepository.findOneBy({ uuid });
+    if (!affiliate) {
       throw new NotFoundException(`Afiliado con UUID '${uuid}' no encontrado.`);
     }
+    
+    // Usar softRemove para el borrado lógico
+    await this.affiliatesRepository.softRemove(affiliate);
 
+    // Enviar un evento claro de eliminación
     this.eventsGateway.emitChange('affiliatesChanged', {
-        message: `Afiliado ${uuid} eliminado.`
+        action: 'delete',
+        message: `Afiliado ${uuid} eliminado.`,
+        uuid: uuid
     });
   }
-
   /**
    * Encuentra todos los afiliados en la base de datos.
    * @returns Un array con todas las entidades de afiliados.

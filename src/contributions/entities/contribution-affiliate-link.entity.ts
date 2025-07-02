@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 import { ContributionEntity } from './contribution.entity';
 import { AffiliateEntity } from 'src/affiliates/entities/affiliate.entity';
 
@@ -41,4 +41,7 @@ export class ContributionAffiliateLinkEntity {
   @ManyToOne(() => AffiliateEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'affiliate_uuid', referencedColumnName: 'uuid' }) // Unir por UUID
   affiliate: AffiliateEntity;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deleted_at: Date;
 }

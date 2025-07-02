@@ -49,13 +49,16 @@ export class FinesService {
     return updatedFine;
   }
 
-  async remove(uuid: string): Promise<void> {
-    const result = await this.finesRepository.delete(uuid);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Multa con UUID '${uuid}' no encontrada.`);
+ async remove(uuid: string): Promise<void> {
+    const fine = await this.finesRepository.findOneBy({ uuid });
+    if (!fine) {
+        throw new NotFoundException(`Multa con UUID '${uuid}' no encontrada.`);
     }
 
+    await this.finesRepository.softRemove(fine);
+
     this.eventsGateway.emitChange('finesChanged', {
+      action: 'delete',
       message: `Multa eliminada: ${uuid}`,
       uuid: uuid
     });

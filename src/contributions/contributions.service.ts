@@ -80,12 +80,19 @@ export class ContributionsService {
 
   // Elimina una contribución
   async remove(uuid: string): Promise<void> {
-    const result = await this.contributionsRepository.delete(uuid);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Contribución con UUID ${uuid} no encontrada.`);
+    const contribution = await this.contributionsRepository.findOneBy({ uuid });
+    if (!contribution) {
+        throw new NotFoundException(`Contribución con UUID ${uuid} no encontrada.`);
     }
+    
+    // El borrado en cascada (onDelete: 'CASCADE') no funciona con soft-delete.
+    // Debemos borrar los enlaces manualmente.
+    const links = await this.linksRepository.findBy({ contribution_uuid: uuid });
+    await this.linksRepository.softRemove(links);
+    await this.contributionsRepository.softRemove(contribution);
 
     this.eventsGateway.emitChange('contributionsChanged', {
+      action: 'delete',
       message: `Contribución eliminada: ${uuid}`,
       uuid: uuid
     });

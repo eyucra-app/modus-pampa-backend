@@ -44,12 +44,15 @@ export class UsersService {
   }
 
   async remove(uuid: string): Promise<void> {
-    const result = await this.usersRepository.delete(uuid);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Usuario con UUID '${uuid}' no encontrado.`);
+    const user = await this.usersRepository.findOneBy({ uuid });
+    if (!user) {
+        throw new NotFoundException(`Usuario con UUID '${uuid}' no encontrado.`);
     }
     
+    await this.usersRepository.softRemove(user);
+    
     this.eventsGateway.emitChange('usersChanged', {
+        action: 'delete',
         message: `Usuario eliminado: ${uuid}`,
         uuid: uuid
     });
