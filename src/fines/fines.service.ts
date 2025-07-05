@@ -26,6 +26,11 @@ export class FinesService {
       uuid: savedFine.uuid
     });
 
+    this.eventsGateway.emitChange('affiliatesChanged', {
+      message: `Afiliado afectado por multa ${savedFine.uuid}`,
+      uuid: savedFine.affiliate_uuid,
+    });
+
     return savedFine;
   }
 
@@ -46,6 +51,11 @@ export class FinesService {
       uuid: updatedFine.uuid
     });
 
+    this.eventsGateway.emitChange('affiliatesChanged', {
+      message: `Afiliado afectado por multa ${updatedFine.uuid}`,
+      uuid: updatedFine.affiliate_uuid,
+    });
+
     return updatedFine;
   }
 
@@ -61,6 +71,11 @@ export class FinesService {
       action: 'delete',
       message: `Multa eliminada: ${uuid}`,
       uuid: uuid
+    });
+
+    this.eventsGateway.emitChange('affiliatesChanged', {
+      message: `Afiliado afectado por eliminación de multa ${uuid}`,
+      uuid: fine.affiliate_uuid,
     });
   }
 

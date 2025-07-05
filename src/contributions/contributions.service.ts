@@ -38,6 +38,13 @@ export class ContributionsService {
       uuid: savedContribution.uuid
     });
 
+    for (const link of linkEntities) {
+      this.eventsGateway.emitChange('affiliatesChanged', {
+        message: `Afiliado afectado por nueva contribución ${savedContribution.uuid}`,
+        uuid: link.affiliate_uuid,
+      });
+    }
+
     return this.findOne(savedContribution.uuid);
   }
 
@@ -74,6 +81,11 @@ export class ContributionsService {
       message: `Enlace de contribución actualizado: ${savedLink.uuid}`,
       uuid: savedLink.contribution_uuid // Notificamos sobre la contribución padre
     });
+
+    this.eventsGateway.emitChange('affiliatesChanged', {
+      message: `Afiliado afectado por pago de contribución ${savedLink.contribution_uuid}`,
+      uuid: savedLink.affiliate_uuid,
+    });
     
     return savedLink;
   }
@@ -90,6 +102,12 @@ export class ContributionsService {
     const links = await this.linksRepository.findBy({ contribution_uuid: uuid });
     await this.linksRepository.softRemove(links);
     await this.contributionsRepository.softRemove(contribution);
+
+    this.eventsGateway.emitChange('contributionsChanged', {
+      action: 'delete',
+      message: `Contribución eliminada: ${uuid}`,
+      uuid: uuid
+    });
 
     this.eventsGateway.emitChange('contributionsChanged', {
       action: 'delete',
