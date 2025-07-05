@@ -38,10 +38,13 @@ export class ContributionsService {
       uuid: savedContribution.uuid
     });
 
-    for (const link of linkEntities) {
+    const affectedAffiliateUuids = linkEntities.map(link => link.affiliate_uuid);
+
+    // Emitimos UN SOLO evento con la lista de todos los afiliados a actualizar
+    if (affectedAffiliateUuids.length > 0) {
       this.eventsGateway.emitChange('affiliatesChanged', {
-        message: `Afiliado afectado por nueva contribución ${savedContribution.uuid}`,
-        uuid: link.affiliate_uuid,
+        message: `Afiliados afectados por nueva contribución ${savedContribution.uuid}`,
+        uuids: affectedAffiliateUuids, // Enviamos un array de UUIDs
       });
     }
 
@@ -100,6 +103,8 @@ export class ContributionsService {
     // El borrado en cascada (onDelete: 'CASCADE') no funciona con soft-delete.
     // Debemos borrar los enlaces manualmente.
     const links = await this.linksRepository.findBy({ contribution_uuid: uuid });
+    const affectedAffiliateUuids = links.map(link => link.affiliate_uuid);
+
     await this.linksRepository.softRemove(links);
     await this.contributionsRepository.softRemove(contribution);
 
@@ -109,10 +114,11 @@ export class ContributionsService {
       uuid: uuid
     });
 
-    this.eventsGateway.emitChange('contributionsChanged', {
-      action: 'delete',
-      message: `Contribución eliminada: ${uuid}`,
-      uuid: uuid
-    });
+    if (affectedAffiliateUuids.length > 0) {
+      this.eventsGateway.emitChange('affiliatesChanged', {
+        message: `Afiliados afectados por eliminación de contribución ${uuid}`,
+        uuids: affectedAffiliateUuids, // Enviamos un array de UUIDs
+      });
+    }
   }
 }
