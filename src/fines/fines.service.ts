@@ -28,8 +28,8 @@ export class FinesService {
 
     this.eventsGateway.emitChange('affiliatesChanged', {
       message: `Afiliado afectado por multa ${savedFine.uuid}`,
-      uuid: savedFine.affiliate_uuid,
-    });
+      uuids: [savedFine.affiliate_uuid],
+    })
 
     return savedFine;
   }
@@ -53,7 +53,7 @@ export class FinesService {
 
     this.eventsGateway.emitChange('affiliatesChanged', {
       message: `Afiliado afectado por multa ${updatedFine.uuid}`,
-      uuid: updatedFine.affiliate_uuid,
+      uuids: [updatedFine.affiliate_uuid],
     });
 
     return updatedFine;
@@ -75,7 +75,7 @@ export class FinesService {
 
     this.eventsGateway.emitChange('affiliatesChanged', {
       message: `Afiliado afectado por eliminación de multa ${uuid}`,
-      uuid: fine.affiliate_uuid,
+      uuids: [fine.affiliate_uuid],
     });
   }
 

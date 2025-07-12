@@ -53,7 +53,7 @@ export class AffiliatesService {
 
     this.eventsGateway.emitChange('affiliatesChanged', {
       message: 'La lista de afiliados ha cambiado.',
-      uuid: savedAffiliate.uuid,
+      uuids: [savedAffiliate.uuid],
     });
 
     return savedAffiliate;
@@ -77,7 +77,7 @@ export class AffiliatesService {
     this.eventsGateway.emitChange('affiliatesChanged', {
         action: 'delete',
         message: `Afiliado ${uuid} eliminado.`,
-        uuid: uuid
+        uuids: [uuid]
     });
   }
   /**

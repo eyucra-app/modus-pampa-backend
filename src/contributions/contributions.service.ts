@@ -87,7 +87,7 @@ export class ContributionsService {
 
     this.eventsGateway.emitChange('affiliatesChanged', {
       message: `Afiliado afectado por pago de contribución ${savedLink.contribution_uuid}`,
-      uuid: savedLink.affiliate_uuid,
+      uuids: [savedLink.affiliate_uuid], 
     });
     
     return savedLink;
